@@ -43,6 +43,7 @@ float       _Glossiness;
 float       _Roughness;
 
 sampler2D   _OcclusionMap;
+float4      _OcclusionMap_ST;
 half        _OcclusionStrength;
 
 sampler2D   _ParallaxMap;
@@ -86,10 +87,10 @@ float4 TexCoords(VertexInput v)
     // Transform/Offset
     texcoord.xy = texcoord.zw + _MainTex_ST.zw;
 
-    texcoord.zw = TRANSFORM_TEX(((_UVSec == 0) ? v.uv0 : v.uv1), _DetailAlbedoMap);
+    texcoord.zw = TRANSFORM_TEX(((_UVSec == 0) ? v.uv0 : v.uv1), _OcclusionMap);
 #else
     texcoord.xy = TRANSFORM_TEX(v.uv0, _MainTex); // Always source from uv0
-    texcoord.zw = TRANSFORM_TEX(((_UVSec == 0) ? v.uv0 : v.uv1), _DetailAlbedoMap);
+    texcoord.zw = TRANSFORM_TEX(v.uv1/*((_UVSec == 0) ? v.uv0 : v.uv1)*/, _OcclusionMap);
 #endif
     return texcoord;
 }
