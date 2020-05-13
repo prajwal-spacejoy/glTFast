@@ -1,4 +1,19 @@
-﻿using System.Collections.Generic;
+﻿// Copyright 2020 Andreas Atteneder
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GLTFast {
@@ -74,7 +89,7 @@ namespace GLTFast {
             if (gltfMaterial.extensions != null) {
                 Schema.PbrSpecularGlossiness specGloss = gltfMaterial.extensions.KHR_materials_pbrSpecularGlossiness;
                 if (specGloss != null) {
-                    material.color = specGloss.diffuseColor;
+                    material.color = specGloss.diffuseColor.gamma;
                     material.SetVector(StandardShaderHelper.specColorPropId, specGloss.specularColor);
                     material.SetFloat(StandardShaderHelper.glossinessPropId,specGloss.glossinessFactor);
 
@@ -87,7 +102,7 @@ namespace GLTFast {
             }
 
             if (gltfMaterial.pbrMetallicRoughness!=null) {
-                material.color = gltfMaterial.pbrMetallicRoughness.baseColor;
+                material.color = gltfMaterial.pbrMetallicRoughness.baseColor.gamma;
                 material.SetFloat(StandardShaderHelper.metallicPropId, gltfMaterial.pbrMetallicRoughness.metallicFactor );
                 material.SetFloat(StandardShaderHelper.roughnessPropId, gltfMaterial.pbrMetallicRoughness.roughnessFactor );
 
@@ -127,7 +142,7 @@ namespace GLTFast {
             }
 
             if(gltfMaterial.emissive != Color.black) {
-                material.SetColor("_EmissionColor", gltfMaterial.emissive);
+                material.SetColor("_EmissionColor", gltfMaterial.emissive.gamma);
                 material.EnableKeyword(StandardShaderHelper.KW_EMISSION);
             }
 

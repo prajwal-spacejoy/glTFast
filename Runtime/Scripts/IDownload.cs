@@ -13,12 +13,24 @@
 // limitations under the License.
 //
 
-namespace GLTFast {
+using System.Collections;
+using UnityEngine;
 
-    public class UninterruptedDeferAgent : IDeferAgent
-    {
-        public bool ShouldDefer() {
-            return false;
-        }
+namespace GLTFast.Loading {
+
+    public interface IDownloadProvider {
+        IDownload Request(string url);
+        ITextureDownload RequestTexture(string url);
+    }
+
+    public interface IDownload : IEnumerator {
+        bool success {get;}
+        string error {get;}
+        byte[] data { get; }
+        string text { get; }
+    }
+
+    public interface ITextureDownload : IDownload {
+        Texture2D texture { get; }
     }
 }
