@@ -1,20 +1,4 @@
-// Copyright 2020 Andreas Atteneder
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
-
-// Based on Unity built-in shader source. Copyright (c) 2016 Unity Technologies. MIT license (see license.txt)
-
+// Unity built-in shader source. Copyright (c) 2016 Unity Technologies. MIT license (see license.txt)
 
 #ifndef UNITY_STANDARD_INPUT_INCLUDED
 #define UNITY_STANDARD_INPUT_INCLUDED
@@ -59,6 +43,7 @@ float       _Glossiness;
 float       _Roughness;
 
 sampler2D   _OcclusionMap;
+float4      _OcclusionMap_ST;
 half        _OcclusionStrength;
 
 sampler2D   _ParallaxMap;
@@ -99,10 +84,10 @@ float4 TexCoords(VertexInput v)
     // Transform/Offset
     texcoord.xy = texcoord.zw + _MainTex_ST.zw;
 
-    texcoord.zw = TRANSFORM_TEX(((_UVSec == 0) ? v.uv0 : v.uv1), _DetailAlbedoMap);
+    texcoord.zw = TRANSFORM_TEX(((_UVSec == 0) ? v.uv0 : v.uv1), _OcclusionMap);
 #else
     texcoord.xy = TRANSFORM_TEX(v.uv0, _MainTex); // Always source from uv0
-    texcoord.zw = TRANSFORM_TEX(((_UVSec == 0) ? v.uv0 : v.uv1), _DetailAlbedoMap);
+    texcoord.zw = TRANSFORM_TEX(v.uv1/*((_UVSec == 0) ? v.uv0 : v.uv1)*/, _OcclusionMap);
 #endif
     return texcoord;
 }
