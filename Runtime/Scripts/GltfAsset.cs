@@ -38,6 +38,7 @@ namespace GLTFast
         protected virtual async void Start() {
             if(loadOnStartup && !string.IsNullOrEmpty(url)) {
                 // Automatic load on startup
+                Debug.Log("Prajwal: Hold Control\nGLTFFast: Set✔");
                 await Load(FullUrl);
             }
         }
