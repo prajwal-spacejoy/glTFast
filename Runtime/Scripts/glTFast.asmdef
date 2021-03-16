@@ -8,7 +8,8 @@
         "Ktx",
         "Unity.Mathematics",
         "Unity.RenderPipelines.Universal.Runtime",
-        "Unity.RenderPipelines.HighDefinition.Runtime"
+        "Unity.RenderPipelines.HighDefinition.Runtime",
+        "glTFExtended"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

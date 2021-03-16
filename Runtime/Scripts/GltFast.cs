@@ -17,7 +17,9 @@
 #define GLTFAST_THREADS
 #endif
 
-// #define MEASURE_TIMINGS
+
+#define EXTENDED_GLTF
+//#define MEASURE_TIMINGS
 
 using System;
 using System.Collections.Generic;
@@ -36,9 +38,9 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using GLTFast.Jobs;
 using Debug = UnityEngine.Debug;
-#if MEASURE_TIMINGS
-using GLTFast.Tests;
-#endif
+//#if MEASURE_TIMINGS
+//using GLTFast.Tests;
+//#endif
 
 [assembly: InternalsVisibleTo("glTFastEditorTests")]
 
@@ -236,6 +238,7 @@ namespace GLTFast {
         async Task<bool> LoadRoutine( Uri url ) {
 
             var download = await downloadProvider.Request(url);
+            Debug.Log("Prajwal: File is downloaded here in case if its a web address (as well for any uri per se");
             var success = download.success;
             
             if(success) {
@@ -282,7 +285,7 @@ namespace GLTFast {
 #endif // KTX_UNITY
         }
 
-        async Task<bool> ParseJsonAndLoadBuffers( string json, Uri baseUri ) {
+        async Task<bool> ParseJsonAndLoadBuffers( string json, Uri url) {
 
             var predictedTime = json.Length / (float)k_JsonParseSpeed;
 #if GLTFAST_THREADS && !MEASURE_TIMINGS
@@ -299,7 +302,23 @@ namespace GLTFast {
                 // That's why parsing JSON right away is *very* important. 
             }
 
-            if(!CheckExtensionSupport(gltfRoot)) {
+#if EXTENDED_GLTF
+            Debug.Log("Prajwal: By Here all the data will be serialized into root class");
+            foreach (var img in gltfRoot.images)
+            {
+                ExtendedGltf.AllocateTextureResourceFetchURI(img, url);
+
+                //Debug.Log("Prajwal: Imagename " + img.name);
+                //Debug.Log("Prajwal: mimeType " + img.mimeType);
+                //Debug.Log("Prajwal: uri " + img.uri);
+                //img.uri = "https://res.cloudinary.com/spacejoy/image/upload/fl_lossy,q_auto,f_auto,w_900/fl_lossy,q_auto,w_600,ar_1.575,c_fill,g_south/v1607706502/web/hero/6002e8e6243b33001cbb67b7_bowcas.jpg";
+            }
+
+
+#endif
+
+
+            if (!CheckExtensionSupport(gltfRoot)) {
                 return false;
             }
 
@@ -323,7 +342,9 @@ namespace GLTFast {
                             Debug.LogError("Error loading embed buffer!");
                             return false;
                         }
-                    } else {
+                    } else
+                    {
+                        var baseUri = UriHelper.GetBaseUri(url);
                         LoadBuffer( i, UriHelper.GetUriString(buffer.uri,baseUri) );
                     }
                 }
@@ -485,7 +506,7 @@ namespace GLTFast {
 
         async Task<bool> LoadGltf( string json, Uri url ) {
             var baseUri = UriHelper.GetBaseUri(url);
-            var success = await ParseJsonAndLoadBuffers(json,baseUri);
+            var success = await ParseJsonAndLoadBuffers(json, url);
             if(success) await LoadImages(baseUri);
             return success;
         }
@@ -508,11 +529,12 @@ namespace GLTFast {
                         if( mat.pbrMetallicRoughness != null ) {
                             if(
                                 mat.pbrMetallicRoughness.baseColorTexture != null &&
-                                mat.pbrMetallicRoughness.baseColorTexture.index >= 0 &&
+                                mat.pbrMetallicRoughness.baseColorTexture.index >= 0 && 
                                 mat.pbrMetallicRoughness.baseColorTexture.index < imageGamma.Length
                             ) {
                                 imageGamma[mat.pbrMetallicRoughness.baseColorTexture.index] = true;
-                            }
+                                Debug.Log("Prajwal Texture indexes per material per se? " + mat.pbrMetallicRoughness.baseColorTexture.index + " mat name: " + mat.name);
+                            };
                         }
                         if(
                             mat.emissiveTexture != null &&
@@ -584,6 +606,7 @@ namespace GLTFast {
                             imageTasks = new List<Task>();
                         }
                         var imageTask = LoadImageFromBuffer(decodedBufferTask, i, img);
+                        Debug.Log("Image " + img.name + " will be loaded from buffer");
                         imageTasks.Add(imageTask);
                     } else {
                         ImageFormat imgFormat;
@@ -688,6 +711,8 @@ namespace GLTFast {
                     // TODO: Loading Jpeg/PNG textures like this creates major frame stalls. Main thread is waiting
                     // on Render thread, which is occupied by Gfx.UploadTextureData for 19 ms for a 2k by 2k texture
                     if(forceSampleLinear) {
+                        Debug.Log("Prajwal: warning, loading tex in slower met");
+            
                         txt = CreateEmptyTexture(gltfRoot.images[imageIndex], imageIndex, forceSampleLinear);
                         // TODO: Investigate for NativeArray variant to avoid `www.data`
                         txt.LoadImage(www.data,!imageReadable[imageIndex]);
@@ -868,7 +893,7 @@ namespace GLTFast {
                     //Debug.Log( string.Format("chunk: JSON; length: {0}", json ) );
                     Profiler.EndSample();
                     
-                    var success = await ParseJsonAndLoadBuffers(json,baseUri);
+                    var success = await ParseJsonAndLoadBuffers(json, uri);
 
                     if(!success) {
                         return false;
