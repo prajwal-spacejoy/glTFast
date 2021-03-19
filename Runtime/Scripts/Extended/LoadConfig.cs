@@ -11,9 +11,9 @@ namespace GLTFast.Schema
     [System.Serializable]
     public class LoadConfig
     {
-        public static Uri textureCDN = new Uri("https://storage.googleapis.com/spacejoy-main/hpGltf/5ff6b1301fb9b30036fd1192/");
+        public static Uri textureCDN = new Uri("https://storage.googleapis.com/spacejoy-staging/hpGltf/5f2954b695fbdf001c86d567/");
         public static bool enableTextureCache;
-        public static TextureType textureFetchMode = TextureType.x2;
+        public static TextureType textureFetchMode = TextureType.raw;
 
 
         public static string ConstructTextureURL(string filePath)

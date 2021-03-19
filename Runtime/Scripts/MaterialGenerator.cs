@@ -54,6 +54,7 @@ namespace GLTFast.Materials {
         public static readonly int metallicPropId = Shader.PropertyToID("_Metallic");
         public static readonly int occlusionMapPropId = Shader.PropertyToID("_OcclusionMap");
         public static readonly int occlusionStrengthPropId = Shader.PropertyToID("_OcclusionStrength");
+        public static readonly int occlusionScaleTransform = Shader.PropertyToID("_OcclusionMap_ST");
         public static readonly int specColorPropId = Shader.PropertyToID("_SpecColor");
         public static readonly int specGlossMapPropId = Shader.PropertyToID("_SpecGlossMap");
 
@@ -138,6 +139,7 @@ namespace GLTFast.Materials {
                         if(textureInfo.texCoord!=0) {
                             Debug.LogError(ERROR_MULTI_UVS);
                         }
+                        Debug.Log("prAJWAL: PROPERTYID: " + propertyId + " FOR TEXTURE: " + img.name);
                         material.SetTexture(propertyId,img);
                         var isKtx = txt.isKtx;
                         TrySetTextureTransform(textureInfo,material,propertyId,isKtx);
@@ -173,9 +175,10 @@ namespace GLTFast.Materials {
                 0,0 // transform
                 );
 
-            if(textureInfo.extensions != null && textureInfo.extensions.KHR_texture_transform!=null) {
+            if (textureInfo.extensions != null && textureInfo.extensions.KHR_texture_transform!=null)
+            {
                 var tt = textureInfo.extensions.KHR_texture_transform;
-                if(tt.texCoord!=0) {
+                if (tt.texCoord!=0) {
                     Debug.LogError(ERROR_MULTI_UVS);
                 }
 
@@ -211,13 +214,28 @@ namespace GLTFast.Materials {
                 textureST.y = -textureST.y; // flip scale in Y
             }
             
-            if(material.HasProperty(mainTexPropId)) {
-                material.SetTextureOffset(mainTexPropId, textureST.zw);
-                material.SetTextureScale(mainTexPropId, textureST.xy);
+            if(textureInfo.texCoord == 1)
+            {
+                Debug.Log("Prajwal: Here setting.... offset: " + textureST.zw.ToString());
+                material.SetTextureOffset(propertyId, textureST.zw);
+
+                material.SetTextureScale(propertyId, textureST.xy);
+                material.SetVector(occlusionScaleTransform, textureST);
+
             }
-            material.SetTextureOffset(propertyId, textureST.zw);
-            material.SetTextureScale(propertyId, textureST.xy);
-            material.SetVector(mainTexScaleTransform, textureST);
+            else
+            {
+                Debug.Log("Prajwal: not Here setting.... offset: " + textureST.zw.ToString());
+                if (material.HasProperty(mainTexPropId))
+                {
+                    material.SetTextureOffset(mainTexPropId, textureST.zw);
+                    material.SetTextureScale(mainTexPropId, textureST.xy);
+                }
+                material.SetTextureOffset(propertyId, textureST.zw);
+                material.SetTextureScale(propertyId, textureST.xy);
+                material.SetVector(mainTexScaleTransform, textureST);
+            }
+
         }
         
         /// <summary>
