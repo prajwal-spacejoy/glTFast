@@ -725,15 +725,19 @@ namespace GLTFast {
                     Texture2D txt;
                     // TODO: Loading Jpeg/PNG textures like this creates major frame stalls. Main thread is waiting
                     // on Render thread, which is occupied by Gfx.UploadTextureData for 19 ms for a 2k by 2k texture
-                    if(forceSampleLinear) {
-                        Debug.Log("Prajwal: warning, loading tex in slower met");
+                    //if(forceSampleLinear) {
             
                         txt = CreateEmptyTexture(gltfRoot.images[imageIndex], imageIndex, forceSampleLinear);
+                        Debug.LogError("Prajwal: warning, loading tex in slower met" + txt.name);
                         // TODO: Investigate for NativeArray variant to avoid `www.data`
-                        txt.LoadImage(www.data,!imageReadable[imageIndex]);
-                    } else {
-                        txt = www.texture;
-                    }
+                        txt.LoadImage(www.data);
+                        txt.Apply(true, !imageReadable[imageIndex]);
+                    //} else
+                    //{
+                    //    txt = www.texture;
+                    //    Debug.LogError("Prajwal: warning, dfff" + txt.name + " and readable: " + !imageReadable[imageIndex]);
+                    //    txt.Apply(true, !imageReadable[imageIndex]);
+                    //}
                     images[imageIndex] = txt;
                     await deferAgent.BreakPoint();
                 } else {
@@ -847,7 +851,7 @@ namespace GLTFast {
                 return;
 #endif // KTX_UNITY
             } else {
-                var downloadTask = downloadProvider.RequestTexture(url,nonReadable);
+                var downloadTask = downloadProvider.RequestTexture(url, false);
                 if(textureDownloadTasks==null) {
                     textureDownloadTasks = new Dictionary<int, Task<ITextureDownload>>();
                 }
@@ -1654,8 +1658,10 @@ namespace GLTFast {
                     if (att.TEXCOORD_1 >= 0) uvCount++;
                     uvInputs = new VertexInputData[uvCount];
                     uvInputs[0] = GetAccessorParams(gltf, att.TEXCOORD_0);
+                    Debug.LogError("Prajwal: Getting uv1 data");
                     if (att.TEXCOORD_1 >= 0) {
                         uvInputs[1] = GetAccessorParams(gltf, att.TEXCOORD_1);
+                        Debug.LogError("Prajwal: Getting uv2 data");
                     }
                 }
                 VertexInputData? colorInput = null;
