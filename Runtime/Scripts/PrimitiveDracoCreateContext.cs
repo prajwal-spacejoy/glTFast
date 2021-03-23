@@ -30,6 +30,9 @@ namespace GLTFast {
         public NativeArray<int> dracoResult;
         public NativeArray<IntPtr> dracoPtr;
 
+
+        public VertexBufferTexCoordsBase texCoords;
+
         public override bool IsCompleted {
             get {
                 return jobHandle.IsCompleted;
@@ -40,6 +43,7 @@ namespace GLTFast {
             jobHandle.Complete();
             int result = dracoResult[0];
             IntPtr dracoMesh = dracoPtr[0];
+            Debug.Log("PRajwal =>>>>>>>>>>>>>>>>>>>>>>> Creating a Draco here, finally");
 
             dracoResult.Dispose();
             dracoPtr.Dispose();
@@ -55,7 +59,14 @@ namespace GLTFast {
             var mesh = DracoMeshLoader.CreateMesh(dracoMesh, out hasNormals, out hasTexcoords);
             Profiler.EndSample();
 
-            if(needsNormals && !hasNormals) {
+
+            //if (texCoords != null)
+            //{
+            //    texCoords.ApplyOnMesh(msh, stream, flags);
+            //    stream++;
+            //}
+
+            if (needsNormals && !hasNormals) {
                 Profiler.BeginSample("Draco.RecalculateNormals");
                 // TODO: Make optional. Only calculate if actually needed
                 mesh.RecalculateNormals();

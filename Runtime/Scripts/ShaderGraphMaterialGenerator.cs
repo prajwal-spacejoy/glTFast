@@ -253,6 +253,7 @@ namespace GLTFast.Materials {
             }
             
             if(TrySetTexture(gltfMaterial.occlusionTexture,material,occlusionMapPropId,ref textures,ref schemaImages, ref imageVariants)) {
+                Debug.LogError("Prajwal: Im setting occlusion here");
                 material.EnableKeyword(KW_OCCLUSION);
                 material.SetFloat(occlusionStrengthPropId,gltfMaterial.occlusionTexture.strength);
             }

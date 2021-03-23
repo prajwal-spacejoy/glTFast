@@ -243,6 +243,13 @@ namespace GLTFast
             stream++;
             Profiler.EndSample();
 
+
+            Debug.Log("PRajwal =>>>>>>>>>>>>>>>>>>>>>>> aoplying uv on mesh new mesh here, finally");
+            var vext = new List<Vector2>();
+            msh.GetUVs(1, vext);
+            Debug.Log("Prajwal vex count after"+ vext.Count);
+            Debug.Log("Prajwal vex count after" + JsonUtility.ToJson(vext));
+
             if (texCoords != null) {
                 texCoords.ApplyOnMesh(msh,stream,flags);
                 stream++;
