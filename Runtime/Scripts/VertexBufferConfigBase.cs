@@ -69,6 +69,11 @@ namespace GLTFast
         public GLTFAccessorAttributeType attributeType {
             get { return accessor.typeEnum; }
         }
+        
+        public Bounds? bounds {
+            get { return accessor.TryGetBounds(); }
+        }
+
         public bool normalize {
             get { return accessor.normalized; }
         }
@@ -83,6 +88,8 @@ namespace GLTFast
 
         protected VertexAttributeDescriptor[] vad;
 
+        public Bounds? bounds { get; protected set; }
+        
         public abstract unsafe JobHandle? ScheduleVertexJobs(
             VertexInputData posInput,
             VertexInputData? nrmInput = null,
@@ -92,7 +99,8 @@ namespace GLTFast
             VertexInputData? weightsInput = null,
             VertexInputData? jointsInput = null
             );
-        public abstract void ApplyOnMesh(UnityEngine.Mesh msh, MeshUpdateFlags flags = MeshUpdateFlags.Default);
+        public abstract void ApplyOnMesh(UnityEngine.Mesh msh, MeshUpdateFlags flags = PrimitiveCreateContextBase.defaultMeshUpdateFlags);
+        public abstract int vertexCount { get; }
         public abstract void Dispose();
 
         protected unsafe JobHandle? GetVector3sJob(

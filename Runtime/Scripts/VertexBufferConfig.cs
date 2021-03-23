@@ -47,6 +47,15 @@ namespace GLTFast
         VertexBufferColors colors;
         VertexBufferBones bones;
 
+        public override int vertexCount {
+            get {
+                if (vData.IsCreated) {
+                    return vData.Length;
+                }
+                return 0;
+            }
+        }
+
         public override unsafe JobHandle? ScheduleVertexJobs(
             VertexInputData posInput,
             VertexInputData? nrmInput = null,
@@ -59,9 +68,11 @@ namespace GLTFast
             Profiler.BeginSample("ScheduleVertexJobs");
             Profiler.BeginSample("AllocateNativeArray");
             vData = new NativeArray<VType>(posInput.count,defaultAllocator);
-            var vDataPtr = (byte*) NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(vData);
+            var vDataPtr = (byte*) vData.GetUnsafeReadOnlyPtr();
             Profiler.EndSample();
 
+            bounds = posInput.bounds;
+            
             int jobCount = 1;
             int outputByteStride = 12; // sizeof Vector3
             hasNormals = nrmInput.HasValue || calculateNormals; 
@@ -226,7 +237,7 @@ namespace GLTFast
             }
         }
 
-        public override void ApplyOnMesh(UnityEngine.Mesh msh, MeshUpdateFlags flags = MeshUpdateFlags.Default) {
+        public override void ApplyOnMesh(UnityEngine.Mesh msh, MeshUpdateFlags flags = PrimitiveCreateContextBase.defaultMeshUpdateFlags) {
 
             Profiler.BeginSample("ApplyOnMesh");
             if (vad == null) {

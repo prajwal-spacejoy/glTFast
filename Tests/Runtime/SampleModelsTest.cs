@@ -13,6 +13,7 @@
 // limitations under the License.
 //
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -22,6 +23,7 @@ using Unity.PerformanceTesting;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 namespace GLTFast.Tests {
 
@@ -29,11 +31,11 @@ namespace GLTFast.Tests {
     using Utils;
 
     public class SampleModelsTest {
-        const string k_TestVersion = "main";
         const int k_Repetitions = 10;
         
         const string glTFSampleSetAssetPath = "Assets/SampleSets/glTF-Sample-Models.asset";
         const string glTFSampleSetJsonPath = "glTF-Sample-Models.json";
+        const string glTFSampleSetBinaryJsonPath = "glTF-Sample-Models-glb.json";
 
         [Test]
         public void CheckFiles()
@@ -77,13 +79,14 @@ namespace GLTFast.Tests {
             var task = LoadGltfSampleSetItem(testCase, go, deferAgent);
             yield return WaitForTask(task);
             Object.Destroy(go);
+#else
+            yield break;            
 #endif
         }
 
         [UnityTest]
         [UseGltfSampleSetTestCase(glTFSampleSetJsonPath)]
         [Performance]
-        [Version(k_TestVersion)]
         public IEnumerator UninterruptedLoading(SampleSetItem testCase)
         {
             Debug.Log($"Testing {testCase.path}");
@@ -106,7 +109,6 @@ namespace GLTFast.Tests {
         [UnityTest]
         [UseGltfSampleSetTestCase(glTFSampleSetJsonPath)]
         [Performance]
-        [Version(k_TestVersion)]
         public IEnumerator SmoothLoading(SampleSetItem testCase)
         {
             Debug.Log($"Testing {testCase.path}");
@@ -124,6 +126,27 @@ namespace GLTFast.Tests {
                     yield return null;
                 }
             }
+            Object.Destroy(go);
+        }
+        
+        /// <summary>
+        /// Load glTF-binary files from memory
+        /// </summary>
+        [UnityTest]
+        [UseGltfSampleSetTestCase(glTFSampleSetBinaryJsonPath)]
+        public IEnumerator LoadGlbFromMemory(SampleSetItem testCase)
+        {
+            Debug.Log($"Testing {testCase.path}");
+            var data = File.ReadAllBytes(testCase.path);
+            var go = new GameObject();
+            var deferAgent = new UninterruptedDeferAgent();
+            var gltf = new GLTFast();
+            var task = gltf.LoadGltfBinary(data, new Uri(testCase.path));
+            yield return WaitForTask(task);
+            var success = task.Result;
+            Assert.IsTrue(success);
+            success = gltf.InstantiateGltf(go.transform);
+            Assert.IsTrue(success);
             Object.Destroy(go);
         }
 

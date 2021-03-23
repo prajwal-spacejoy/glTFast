@@ -33,7 +33,7 @@ namespace GLTFast {
             NativeSlice<JobHandle> handles
             );
         public abstract void AddDescriptors(VertexAttributeDescriptor[] dst, int offset, int stream);
-        public abstract void ApplyOnMesh(UnityEngine.Mesh msh, int stream, MeshUpdateFlags flags = MeshUpdateFlags.Default);
+        public abstract void ApplyOnMesh(UnityEngine.Mesh msh, int stream, MeshUpdateFlags flags = PrimitiveCreateContextBase.defaultMeshUpdateFlags);
         public abstract void Dispose();
     }
 
@@ -76,8 +76,7 @@ namespace GLTFast {
                     jointsInput.type,
                     jointsInput.byteStride,
                     (uint*)(vDataPtr+16),
-                    32,
-                    jointsInput.normalize
+                    32
                 );
                 if (h.HasValue) {
                     handles[1] = h.Value;
@@ -95,7 +94,7 @@ namespace GLTFast {
             dst[offset+1] = new VertexAttributeDescriptor(VertexAttribute.BlendIndices, VertexAttributeFormat.UInt32, 4, stream);
         }
 
-        public override void ApplyOnMesh(UnityEngine.Mesh msh, int stream, MeshUpdateFlags flags = MeshUpdateFlags.Default) {
+        public override void ApplyOnMesh(UnityEngine.Mesh msh, int stream, MeshUpdateFlags flags = PrimitiveCreateContextBase.defaultMeshUpdateFlags) {
             Profiler.BeginSample("ApplyBones");
             msh.SetVertexBufferData(vData,0,0,vData.Length,stream,flags);
             Profiler.EndSample();
@@ -143,36 +142,36 @@ namespace GLTFast {
             return jobHandle;
         }
 
-        protected unsafe JobHandle? GetJointsJob(
+        static unsafe JobHandle? GetJointsJob(
             void* input,
             int count,
             GLTFComponentType inputType,
             int inputByteStride,
             uint* output,
-            int outputByteStride,
-            bool normalized = false
-            )
+            int outputByteStride
+        )
         {
             Profiler.BeginSample("GetJointsJob");
             JobHandle? jobHandle;
             switch(inputType) {
-                // TODO: Complete
-                // case GLTFComponentType.Float:
-                //     break;
-                case GLTFComponentType.UnsignedShort:
-                    var jobTangent = new Jobs.GetJointsUInt16Job();
-                    jobTangent.inputByteStride = inputByteStride>0 ? inputByteStride : 8;
-                    // Assert.IsTrue(normalized);
-                    jobTangent.input = (byte*)input;
-                    jobTangent.outputByteStride = outputByteStride;
-                    jobTangent.result = output;
-                    jobHandle = jobTangent.Schedule(count,GLTFast.DefaultBatchCount);
+                case GLTFComponentType.UnsignedByte:
+                    var jointsUInt8Job = new Jobs.GetJointsUInt8Job();
+                    jointsUInt8Job.inputByteStride = inputByteStride>0 ? inputByteStride : 4;
+                    jointsUInt8Job.input = (byte*)input;
+                    jointsUInt8Job.outputByteStride = outputByteStride;
+                    jointsUInt8Job.result = output;
+                    jobHandle = jointsUInt8Job.Schedule(count,GLTFast.DefaultBatchCount);
                     break;
-                // TODO: Complete
-                // case GLTFComponentType.UnsignedByte:
-                //     break;
+                case GLTFComponentType.UnsignedShort:
+                    var jointsUInt16Job = new Jobs.GetJointsUInt16Job();
+                    jointsUInt16Job.inputByteStride = inputByteStride>0 ? inputByteStride : 8;
+                    jointsUInt16Job.input = (byte*)input;
+                    jointsUInt16Job.outputByteStride = outputByteStride;
+                    jointsUInt16Job.result = output;
+                    jobHandle = jointsUInt16Job.Schedule(count,GLTFast.DefaultBatchCount);
+                    break;
                 default:
-                    Debug.LogErrorFormat( GLTFast.ErrorUnsupportedType, "Tangent", inputType);
+                    Debug.LogErrorFormat( GLTFast.ErrorUnsupportedType, "Joints", inputType);
                     jobHandle = null;
                     break;
             }
