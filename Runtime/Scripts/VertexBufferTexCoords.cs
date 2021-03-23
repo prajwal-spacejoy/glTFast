@@ -43,6 +43,8 @@ namespace GLTFast {
             var vDataPtr = (byte*) NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(vData);
             Profiler.EndSample();
             uvSetCount = uvInputs.Length;
+
+            Debug.LogError("Prajwal: uv sET count: " + uvSetCount);
             int outputByteStride = uvInputs.Length * 8;
 
             for (int i=0; i<uvInputs.Length; i++) {
@@ -104,8 +106,8 @@ namespace GLTFast {
         {
             Profiler.BeginSample("PrepareUVs");
             JobHandle? jobHandle = null;
-            
-            switch( inputType ) { 
+            Debug.LogError("Prajwal: uv input type: " + inputType.ToString());
+            switch ( inputType ) { 
             case GLTFComponentType.Float:
                 {
                     var jobUv = new Jobs.GetVector2sInterleavedJob {

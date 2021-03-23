@@ -216,24 +216,33 @@ namespace GLTFast.Materials {
             
             if(textureInfo.texCoord == 1)
             {
-                Debug.Log("Prajwal: Here setting.... offset: " + textureST.zw.ToString());
+                Debug.Log("Prajwal: Here setting.... offset: " + propertyId);
+                Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
                 material.SetTextureOffset(propertyId, textureST.zw);
 
                 material.SetTextureScale(propertyId, textureST.xy);
+                Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
                 material.SetVector(occlusionScaleTransform, textureST);
 
+                Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
+                material.SetVector("_OcclusionMap_ST", textureST);
+                Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
             }
-            else
+            
             {
-                Debug.Log("Prajwal: not Here setting.... offset: " + textureST.zw.ToString());
+                Debug.LogWarning("Prajwal: not Here setting.... offset: " + propertyId);
+                //Debug.LogWarning("Prajwal: two wayyyyy  prpertuy od: " + material.GetVector("_MainTex_ST"));
                 if (material.HasProperty(mainTexPropId))
                 {
                     material.SetTextureOffset(mainTexPropId, textureST.zw);
                     material.SetTextureScale(mainTexPropId, textureST.xy);
                 }
+                //Debug.LogWarning("Prajwal:two wayyyyy  prpertuy od: " + material.GetVector("_MainTex_ST"));
                 material.SetTextureOffset(propertyId, textureST.zw);
                 material.SetTextureScale(propertyId, textureST.xy);
+                //Debug.LogWarning("Prajwal:two wayyyyy  prpertuy od: " + material.GetVector("_MainTex_ST"));
                 material.SetVector(mainTexScaleTransform, textureST);
+                //Debug.LogWarning("Prajwal:two wayyyyy  prpertuy od: " + material.GetVector("_MainTex_ST"));
             }
 
         }
