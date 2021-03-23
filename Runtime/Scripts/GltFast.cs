@@ -156,6 +156,10 @@ namespace GLTFast {
         List<KtxLoadContextBase> ktxLoadContextsBuffer;
 #endif // KTX_UNITY
 
+#if EXTENDED_GLTF
+        string uv2TempBuffer;
+#endif
+
         Texture2D[] images = null;
         ImageFormat[] imageFormats;
         bool[] imageReadable;
@@ -1410,8 +1414,9 @@ namespace GLTFast {
                         cluster[primitive.attributes] = new List<MeshPrimitive>();
                     }
                     cluster[primitive.attributes].Add(primitive);
+                    Debug.LogError("prajwal=>>>> draco compres before: " + JsonUtility.ToJson(primitive));
 #if DRACO_UNITY
-                    var isDraco = primitive.isDracoCompressed;
+                    var isDraco = false;//primitive.isDracoCompressed;
                     if(isDraco) continue;
 #else
                     var isDraco = false;
@@ -1513,10 +1518,13 @@ namespace GLTFast {
                     if (att.TEXCOORD_1 >= 0) uvCount++;
                     uvInputs = new VertexInputData[uvCount];
                     uvInputs[0] = GetAccessorParams(gltf, att.TEXCOORD_0);
-                    Debug.LogError("Prajwal: Getting uv1 data");
+                    Debug.LogError("Prajwal: Getting uv1 data " + att.TEXCOORD_0);
                     if (att.TEXCOORD_1 >= 0) {
                         uvInputs[1] = GetAccessorParams(gltf, att.TEXCOORD_1);
-                        Debug.LogError("Prajwal: Getting uv2 data");
+                        Debug.LogError("Prajwal: Getting uv2 data " + att.TEXCOORD_1);
+                        Debug.LogError("Prajwal: uv2 ACCESSOR " + JsonUtility.ToJson(uvInputs[1].accessor));
+                        Debug.LogError("Prajwal: uv2 bufferView " + JsonUtility.ToJson(uvInputs[1].bufferView));
+                        Debug.LogError("Prajwal: uv2 buffer " + BitConverter.ToString(uvInputs[1].buffer));
                     }
                 }
                 VertexInputData? colorInput = null;
@@ -1629,7 +1637,9 @@ namespace GLTFast {
                     for (int primIndex = 0; primIndex < cluster.Count; primIndex++) {
                         var primitive = cluster[primIndex];
 #if DRACO_UNITY
-                        if (primitive.isDracoCompressed) {
+                        Debug.LogError("Major draco to uv switch");
+                        if (primitive.isDracoCompressed)
+                        {
                             context = new PrimitiveDracoCreateContext();
                             context.materials = new int[1];
                         }
