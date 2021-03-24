@@ -12,7 +12,8 @@ public class ExtendedGltf
     {
         if (string.IsNullOrEmpty(img.uri))
             return;
-        //img.uri = LoadConfig.ConstructTextureURL(img.uri);
+        img.uri = LoadConfig.ConstructTextureURL(img.uri);
+
 
 
 
