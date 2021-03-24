@@ -13,13 +13,16 @@
 // limitations under the License.
 //
 
+#define EXTENDED_GLTF
+//#define MEASURE_TIMINGS
+
+
 #if !UNITY_WEBGL || UNITY_EDITOR
 #define GLTFAST_THREADS
 #endif
-
-
-#define EXTENDED_GLTF
-//#define MEASURE_TIMINGS
+#if EXTENDED_GLTF && DRACO_UNITY && KTX_UNITY
+#define HP_GLTF
+#endif
 
 using System;
 using System.Collections.Generic;
@@ -156,7 +159,7 @@ namespace GLTFast {
         List<KtxLoadContextBase> ktxLoadContextsBuffer;
 #endif // KTX_UNITY
 
-#if EXTENDED_GLTF
+#if HP_GLTF
         string uv2TempBuffer;
 #endif
 
@@ -306,7 +309,7 @@ namespace GLTFast {
                 // That's why parsing JSON right away is *very* important. 
             }
 
-#if EXTENDED_GLTF
+#if HP_GLTF
             Debug.Log("Prajwal: By Here all the data will be serialized into root class");
             foreach (var img in gltfRoot.images)
             {
@@ -712,21 +715,26 @@ namespace GLTFast {
                     var imageIndex = dl.Key;
                     bool forceSampleLinear = imageGamma!=null && !imageGamma[imageIndex];
                     Texture2D txt;
+#if HP_GLTF
+                    // Although slower, the texture is realloc here, as the mipmap gen has to be set at the constructor and the www.texture doesn't have that by default
+                    // TODO: faster texture copy or more efficient www texture fetch with mips
+                    forceSampleLinear = true;
+                    Debug.LogWarning("Loading texture in a slower way");
+#endif
+
                     // TODO: Loading Jpeg/PNG textures like this creates major frame stalls. Main thread is waiting
                     // on Render thread, which is occupied by Gfx.UploadTextureData for 19 ms for a 2k by 2k texture
-                    //if(forceSampleLinear) {
+                    if (forceSampleLinear) {
             
                         txt = CreateEmptyTexture(gltfRoot.images[imageIndex], imageIndex, forceSampleLinear);
-                        Debug.LogError("Prajwal: warning, loading tex in slower met" + txt.name);
                         // TODO: Investigate for NativeArray variant to avoid `www.data`
                         txt.LoadImage(www.data);
                         txt.Apply(true, !imageReadable[imageIndex]);
-                    //} else
-                    //{
-                    //    txt = www.texture;
-                    //    Debug.LogError("Prajwal: warning, dfff" + txt.name + " and readable: " + !imageReadable[imageIndex]);
-                    //    txt.Apply(true, !imageReadable[imageIndex]);
-                    //}
+                    } else
+                    {
+                        txt = www.texture;
+                        txt.Apply(true, !imageReadable[imageIndex]);
+                    }
                     images[imageIndex] = txt;
                     await deferAgent.BreakPoint();
                 } else {
@@ -1414,10 +1422,23 @@ namespace GLTFast {
                         cluster[primitive.attributes] = new List<MeshPrimitive>();
                     }
                     cluster[primitive.attributes].Add(primitive);
-                    Debug.LogError("prajwal=>>>> draco compres before: " + JsonUtility.ToJson(primitive));
+
+
+#if HP_GLTF
+                    Debug.Log("LoadedPrimitive: " + JsonUtility.ToJson(primitive));
+                    if (primitive.isDracoCompressed)
+                    {
+                        //primitives: here is a mesh or a Gameobject, one glb file can have n primitives
+                        //attributes: Attributes and indices are defined as references to accessors containing corresponding data
+                        //accessors: All large data for meshes, skins, and animations is stored in buffers and retrieved via accessors
+                        //more here: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#accessors
+
+                    }
+#endif
+
 #if DRACO_UNITY
-                    var isDraco = false;//primitive.isDracoCompressed;
-                    if(isDraco) continue;
+                    var isDraco = primitive.isDracoCompressed;
+                    if (isDraco) continue;
 #else
                     var isDraco = false;
 #endif
@@ -1518,13 +1539,8 @@ namespace GLTFast {
                     if (att.TEXCOORD_1 >= 0) uvCount++;
                     uvInputs = new VertexInputData[uvCount];
                     uvInputs[0] = GetAccessorParams(gltf, att.TEXCOORD_0);
-                    Debug.LogError("Prajwal: Getting uv1 data " + att.TEXCOORD_0);
                     if (att.TEXCOORD_1 >= 0) {
                         uvInputs[1] = GetAccessorParams(gltf, att.TEXCOORD_1);
-                        Debug.LogError("Prajwal: Getting uv2 data " + att.TEXCOORD_1);
-                        Debug.LogError("Prajwal: uv2 ACCESSOR " + JsonUtility.ToJson(uvInputs[1].accessor));
-                        Debug.LogError("Prajwal: uv2 bufferView " + JsonUtility.ToJson(uvInputs[1].bufferView));
-                        Debug.LogError("Prajwal: uv2 buffer " + BitConverter.ToString(uvInputs[1].buffer));
                     }
                 }
                 VertexInputData? colorInput = null;
