@@ -14,6 +14,7 @@ namespace GLTFast.Schema
         public static Uri textureCDN = new Uri("https://storage.googleapis.com/spacejoy-staging/hpGltf/5f2954b695fbdf001c86d567/");
         public static bool enableTextureCache;
         public static TextureType textureFetchMode = TextureType.raw;
+        public static string FileCache = "";
 
 
         public static string ConstructTextureURL(string filePath)
