@@ -1425,7 +1425,7 @@ namespace GLTFast {
 
 
 #if HP_GLTF
-                    Debug.Log("LoadedPrimitive: " + JsonUtility.ToJson(primitive));
+                    //Debug.Log("LoadedPrimitive: " + JsonUtility.ToJson(primitive));
                     if (primitive.isDracoCompressed)
                     {
                         //primitives: here is a mesh or a Gameobject, one glb file can have n primitives
