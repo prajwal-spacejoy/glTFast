@@ -216,17 +216,17 @@ namespace GLTFast.Materials {
             
             if(textureInfo.texCoord == 1)
             {
-                Debug.Log("Prajwal: Here setting.... offset: " + propertyId);
+                //Debug.Log("Prajwal: Here setting.... offset: " + propertyId);
                 Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
                 material.SetTextureOffset(propertyId, textureST.zw);
 
                 material.SetTextureScale(propertyId, textureST.xy);
-                Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
+                //Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
                 material.SetVector(occlusionScaleTransform, textureST);
 
-                Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
+                //Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
                 material.SetVector("_OcclusionMap_ST", textureST);
-                Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
+                //Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
             }
             
             {

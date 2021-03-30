@@ -736,13 +736,14 @@ namespace GLTFast {
                     if (forceSampleLinear) {
             
                         txt = CreateEmptyTexture(gltfRoot.images[imageIndex], imageIndex, forceSampleLinear);
+                        //Debug.Log("bytes: " + BitConverter.ToString(www.data));
                         // TODO: Investigate for NativeArray variant to avoid `www.data`
                         txt.LoadImage(www.data);
                         txt.Apply(true, !imageReadable[imageIndex]);
                     } else
                     {
                         txt = www.texture;
-                        txt.Apply(true, !imageReadable[imageIndex]);
+                        //txt.Apply(true, !imageReadable[imageIndex]);
                     }
                     images[imageIndex] = txt;
                     await deferAgent.BreakPoint();
