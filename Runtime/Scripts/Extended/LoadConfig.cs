@@ -14,7 +14,7 @@ namespace GLTFast.Schema
         static TextureType textureFetchMode = TextureType.raw;
 
 
-        public static string ConstructTextureURL(string filePath)
+        public static string ConstructTextureURL(string filePath, string uniqueID)
         {
             string texUrl;
             switch (textureFetchMode)
@@ -26,8 +26,8 @@ namespace GLTFast.Schema
                     texUrl = Path.GetFileName(filePath);
                     break;
             }
-            //Debug.Log("texture cdn: " + textureCDN.Append(textureFetchMode.ToString(), texUrl).AbsoluteUri);
-            return textureCDN.Append(textureFetchMode.ToString(), texUrl).AbsoluteUri;
+            //Debug.Log("texture cdn: " + textureCDN.Append(uniqueID, textureFetchMode.ToString(), texUrl).AbsoluteUri);
+            return textureCDN.Append(uniqueID, textureFetchMode.ToString(), texUrl).AbsoluteUri;
         }
 
         public static void SetLoadMode(Uri textureCdn, TextureType textureFetchMode, bool forceMipGeneration)
