@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using UnityEngine;
 
 namespace GLTFast.Schema
 {
@@ -7,6 +8,8 @@ namespace GLTFast.Schema
     [System.Serializable]
     public static class LoadConfig
     {
+        public static bool forceMipGeneration;
+
         static Uri textureCDN;
         static TextureType textureFetchMode = TextureType.raw;
 
@@ -23,14 +26,15 @@ namespace GLTFast.Schema
                     texUrl = Path.GetFileName(filePath);
                     break;
             }
-
+            //Debug.Log("texture cdn: " + textureCDN.Append(textureFetchMode.ToString(), texUrl).AbsoluteUri);
             return textureCDN.Append(textureFetchMode.ToString(), texUrl).AbsoluteUri;
         }
 
-        public static void SetLoadMode(Uri textureCdn, TextureType textureFetchMode)
+        public static void SetLoadMode(Uri textureCdn, TextureType textureFetchMode, bool forceMipGeneration)
         {
-            textureCDN = textureCdn;
+            LoadConfig.textureCDN = textureCdn;
             LoadConfig.textureFetchMode = textureFetchMode;
+            LoadConfig.forceMipGeneration = forceMipGeneration;
         }
 
     }
