@@ -212,6 +212,7 @@ namespace GLTFast {
             )
         {
             this.downloadProvider = downloadProvider ?? new DefaultDownloadProvider();
+            Debug.LogError("Downloaded type: "+ this.downloadProvider.GetType().Name);
 
             if (deferAgent == null) {
                 if (defaultDeferAgent == null) {
@@ -311,9 +312,11 @@ namespace GLTFast {
 #if HP_GLTF
             if (gltfRoot.images != null)
             {
+                ExtendedGltf gltfExt = new ExtendedGltf();
+                gltfExt.currentFileUniqueID = System.IO.Path.GetFileNameWithoutExtension(url.LocalPath);
                 foreach (var img in gltfRoot.images)
                 {
-                    ExtendedGltf.AllocateTextureResourceFetchURI(img, url);
+                    gltfExt.AllocateTextureResourceFetchURI(img, url);
                 }
             }
 #endif
