@@ -136,10 +136,9 @@ namespace GLTFast.Materials {
                         && imageVariants[imageIndex].TryGetValue(txt.sampler,out img)
                         )
                     {
-                        if(textureInfo.texCoord!=0) {
-                            Debug.LogError(ERROR_MULTI_UVS);
-                        }
-                        Debug.Log("prAJWAL: PROPERTYID: " + propertyId + " FOR TEXTURE: " + img.name);
+                        //if(textureInfo.texCoord!=0) {
+                        //    Debug.LogError(ERROR_MULTI_UVS);
+                        //}
                         material.SetTexture(propertyId,img);
                         var isKtx = txt.isKtx;
                         TrySetTextureTransform(textureInfo,material,propertyId,isKtx);
@@ -216,33 +215,21 @@ namespace GLTFast.Materials {
             
             if(textureInfo.texCoord == 1)
             {
-                //Debug.Log("Prajwal: Here setting.... offset: " + propertyId);
-                Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
                 material.SetTextureOffset(propertyId, textureST.zw);
-
                 material.SetTextureScale(propertyId, textureST.xy);
-                //Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
                 material.SetVector(occlusionScaleTransform, textureST);
-
-                //Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
                 material.SetVector("_OcclusionMap_ST", textureST);
-                //Debug.LogWarning("Prajwal: prpertuy od: " + material.GetVector("_OcclusionMap_ST"));
             }
             
             {
-                Debug.LogWarning("Prajwal: not Here setting.... offset: " + propertyId);
-                //Debug.LogWarning("Prajwal: two wayyyyy  prpertuy od: " + material.GetVector("_MainTex_ST"));
                 if (material.HasProperty(mainTexPropId))
                 {
                     material.SetTextureOffset(mainTexPropId, textureST.zw);
                     material.SetTextureScale(mainTexPropId, textureST.xy);
                 }
-                //Debug.LogWarning("Prajwal:two wayyyyy  prpertuy od: " + material.GetVector("_MainTex_ST"));
                 material.SetTextureOffset(propertyId, textureST.zw);
                 material.SetTextureScale(propertyId, textureST.xy);
-                //Debug.LogWarning("Prajwal:two wayyyyy  prpertuy od: " + material.GetVector("_MainTex_ST"));
                 material.SetVector(mainTexScaleTransform, textureST);
-                //Debug.LogWarning("Prajwal:two wayyyyy  prpertuy od: " + material.GetVector("_MainTex_ST"));
             }
 
         }

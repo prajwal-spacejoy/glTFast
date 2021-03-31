@@ -43,7 +43,6 @@ namespace GLTFast {
             jobHandle.Complete();
             int result = dracoResult[0];
             IntPtr dracoMesh = dracoPtr[0];
-            Debug.Log("PRajwal =>>>>>>>>>>>>>>>>>>>>>>> Creating a Draco here, finally");
 
             dracoResult.Dispose();
             dracoPtr.Dispose();
