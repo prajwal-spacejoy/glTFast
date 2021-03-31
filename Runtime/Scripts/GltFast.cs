@@ -248,7 +248,6 @@ namespace GLTFast {
         async Task<bool> LoadRoutine( Uri url ) {
 
             var download = await downloadProvider.Request(url);
-            Debug.Log("Prajwal: File is downloaded here in case if its a web address (as well for any uri per se");
             var success = download.success;
             
             if(success) {
@@ -313,18 +312,13 @@ namespace GLTFast {
             }
 
 #if HP_GLTF
-            Debug.Log("Prajwal: By Here all the data will be serialized into root class");
-            foreach (var img in gltfRoot.images)
+            if (gltfRoot.images != null)
             {
-                ExtendedGltf.AllocateTextureResourceFetchURI(img, url);
-
-                //Debug.Log("Prajwal: Imagename " + img.name);
-                //Debug.Log("Prajwal: mimeType " + img.mimeType);
-                //Debug.Log("Prajwal: uri " + img.uri);
-                //img.uri = "https://res.cloudinary.com/spacejoy/image/upload/fl_lossy,q_auto,f_auto,w_900/fl_lossy,q_auto,w_600,ar_1.575,c_fill,g_south/v1607706502/web/hero/6002e8e6243b33001cbb67b7_bowcas.jpg";
+                foreach (var img in gltfRoot.images)
+                {
+                    ExtendedGltf.AllocateTextureResourceFetchURI(img, url);
+                }
             }
-
-
 #endif
 
 
@@ -555,7 +549,6 @@ namespace GLTFast {
                                 mat.pbrMetallicRoughness.baseColorTexture.index < imageGamma.Length
                             ) {
                                 imageGamma[mat.pbrMetallicRoughness.baseColorTexture.index] = true;
-                                Debug.Log("Prajwal Texture indexes per material per se? " + mat.pbrMetallicRoughness.baseColorTexture.index + " mat name: " + mat.name);
                             };
                         }
                         if(
@@ -733,8 +726,7 @@ namespace GLTFast {
 #if HP_GLTF
                     // Although slower, the texture is realloc here, as the mipmap gen has to be set at the constructor and the www.texture doesn't have that by default
                     // TODO: faster texture copy or more efficient www texture fetch with mips
-                    forceSampleLinear = true;
-                    Debug.LogWarning("Loading texture in a slower way");
+                    forceSampleLinear = ExtendedGltf.forceMipGeneration;
 #endif
 
                     // TODO: Loading Jpeg/PNG textures like this creates major frame stalls. Main thread is waiting
@@ -1864,7 +1856,6 @@ namespace GLTFast {
                     for (int primIndex = 0; primIndex < cluster.Count; primIndex++) {
                         var primitive = cluster[primIndex];
 #if DRACO_UNITY
-                        Debug.LogError("Major draco to uv switch");
                         if (primitive.isDracoCompressed)
                         {
                             context = new PrimitiveDracoCreateContext();
