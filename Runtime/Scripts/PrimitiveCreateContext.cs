@@ -40,7 +40,6 @@ namespace GLTFast {
 
         public override async Task<Primitive?> CreatePrimitive() {
             Profiler.BeginSample("CreatePrimitive");
-            Debug.Log("PRajwal =>>>>>>>>>>>>>>>>>>>>>>> Creating a new mesh here, finally");
             jobHandle.Complete();
             var msh = new UnityEngine.Mesh();
             msh.name = mesh.name;
