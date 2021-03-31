@@ -137,6 +137,8 @@ namespace GLTFast.Materials {
                     {
                         if(textureInfo.texCoord!=0) {
                             Debug.LogError(ERROR_MULTI_UVS);
+                            Object.Destroy(img);
+                            return false;
                         }
                         material.SetTexture(propertyId,img);
                         var isKtx = txt.isKtx;
