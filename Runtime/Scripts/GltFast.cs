@@ -212,7 +212,6 @@ namespace GLTFast {
             )
         {
             this.downloadProvider = downloadProvider ?? new DefaultDownloadProvider();
-            Debug.LogError("Downloaded type: "+ this.downloadProvider.GetType().Name);
 
             if (deferAgent == null) {
                 if (defaultDeferAgent == null) {
