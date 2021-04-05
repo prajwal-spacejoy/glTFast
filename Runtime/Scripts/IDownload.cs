@@ -27,7 +27,7 @@ namespace GLTFast.Loading {
 
     public interface IDownload : IEnumerator {
         bool success {get;}
-        string error {get;}
+        string error { get; set; }
         byte[] data { get; }
         string text { get; }
         bool? isBinary { get; }
