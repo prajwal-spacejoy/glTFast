@@ -17,6 +17,9 @@ public class ExtendedGltf
         if (string.IsNullOrEmpty(img.uri))
             return;
         img.uri = LoadConfig.ConstructTextureURL(img.uri, currentFileUniqueID);
+
+        if (LoadConfig.GetTextureFetchMode() == TextureType.ktx)
+            img.mimeType = LoadConfig.KtxMimeType;
     }
 
 
