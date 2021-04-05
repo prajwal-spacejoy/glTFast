@@ -66,7 +66,9 @@ namespace GLTFast.Loading {
         public bool success => request.isDone && !request.isNetworkError && !request.isHttpError;
 #endif
 
-        public string error { get { return request.error; } }
+        string _errorExtened = string.Empty;
+
+        public string error { get { return string.IsNullOrEmpty(_errorExtened) ? request.error : _errorExtened; } set { _errorExtened = value; } }
         public byte[] data { get { return request.downloadHandler.data; } }
         public string text { get { return request.downloadHandler.text; } }
         public bool? isBinary
