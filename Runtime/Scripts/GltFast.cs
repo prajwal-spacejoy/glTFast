@@ -14,9 +14,10 @@
 //
 
 #define EXTENDED_GLTF
+
+//#if DEVELOPMENT_BUILD || UNITY_EDITOR
 //#define MEASURE_TIMINGS
-
-
+//#endif
 #if !UNITY_WEBGL || UNITY_EDITOR
 #define GLTFAST_THREADS
 #endif
@@ -467,7 +468,7 @@ namespace GLTFast {
             stopWatch.Stop();
             var elapsedSeconds = stopWatch.ElapsedMilliseconds / 1000f;
             var throughput = json.Length / elapsedSeconds;
-            Debug.Log($"JSON throughput: {throughput} bytes/sec ({json.Length} bytes in {elapsedSeconds} seconds)");
+            Debug.Log($"JSON throughput: {throughput} bytes/sec ({json.Length} bytes in {stopWatch.ElapsedMilliseconds} seconds)");
 #endif
             return root;
         }
