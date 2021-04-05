@@ -151,10 +151,6 @@ namespace GLTFast {
         List<KtxLoadContextBase> ktxLoadContextsBuffer;
 #endif // KTX_UNITY
 
-#if HP_GLTF
-        string uv2TempBuffer;
-#endif
-
         Texture2D[] images = null;
         ImageFormat[] imageFormats;
         bool[] imageReadable;
