@@ -311,11 +311,15 @@ namespace GLTFast {
 #if HP_GLTF
             if (gltfRoot.images != null)
             {
-                ExtendedGltf gltfExt = new ExtendedGltf();
-                gltfExt.currentFileUniqueID = System.IO.Path.GetFileNameWithoutExtension(url.LocalPath);
+                var urlSplit = url.AbsoluteUri.Split('/');
+                var destSplitArray = new string[urlSplit.Length - 2];
+                Array.Copy(urlSplit, 0, destSplitArray, 0, urlSplit.Length - 2);
+                var textureCDNCore = string.Join("/", destSplitArray);
+
+                ExtendedGltf gltfExt = new ExtendedGltf(System.IO.Path.GetFileNameWithoutExtension(url.LocalPath), textureCDNCore);
                 foreach (var img in gltfRoot.images)
                 {
-                    gltfExt.AllocateTextureResourceFetchURI(img, url);
+                    gltfExt.AllocateTextureResourceFetchURI(img);
                 }
             }
 #endif
