@@ -726,11 +726,6 @@ namespace GLTFast {
                     var imageIndex = dl.Key;
                     bool forceSampleLinear = imageGamma!=null && !imageGamma[imageIndex];
                     Texture2D txt;
-#if HP_GLTF
-                    // Although slower, the texture is realloc here, as the mipmap gen has to be set at the constructor and the www.texture doesn't have that by default
-                    // TODO: faster texture copy or more efficient www texture fetch with mips
-                    forceSampleLinear = ExtendedGltf.forceMipGeneration;
-#endif
 
                     // TODO: Loading Jpeg/PNG textures like this creates major frame stalls. Main thread is waiting
                     // on Render thread, which is occupied by Gfx.UploadTextureData for 19 ms for a 2k by 2k texture
@@ -743,8 +738,22 @@ namespace GLTFast {
                         txt.Apply(true, !imageReadable[imageIndex]);
                     } else
                     {
+#if HP_GLTF
+                        // Although slower, the texture is realloc here, as the mipmap gen has to be set at the constructor and the unitywebreq.texture doesn't have that by default
+                        // TODO: faster texture copy or more efficient www texture fetch with mips
+                        if (ExtendedGltf.forceMipGeneration)
+                        {
+                            txt = CreateEmptyTexture(gltfRoot.images[imageIndex], imageIndex, forceSampleLinear);
+                            // TODO: Investigate for NativeArray variant to avoid `www.data`
+                            txt.LoadImage(www.data);
+                            txt.Apply(true, !imageReadable[imageIndex]);
+                        }
+                        else
+                            txt = www.texture;
+#else
                         txt = www.texture;
                         //txt.Apply(true, !imageReadable[imageIndex]);
+#endif
                     }
                     images[imageIndex] = txt;
                     await deferAgent.BreakPoint();
@@ -1710,9 +1719,9 @@ namespace GLTFast {
                         config = new VertexBufferConfig<Vertex.VPosNormTan>();
                         break;
                     default:
-                        #if DEBUG
+#if DEBUG
                         Debug.LogErrorFormat("Invalid mainBufferType {0}",mainBufferType);
-                        #endif
+#endif
                         return false;
                 }
                 config.calculateNormals = !hasNormals && (mainBufferType.Value & MainBufferType.Normal) > 0;
@@ -2316,9 +2325,9 @@ namespace GLTFast {
         unsafe int GetVector3sJob(Root gltf, int accessorIndex, out JobHandle? jobHandle, out NativeArray<Vector3> result) {
             Profiler.BeginSample("PrepareGetVector3sJob");
             Assert.IsTrue(accessorIndex>=0);
-            #if DEBUG
+#if DEBUG
             Assert.AreEqual( GetAccessorTye(gltf.accessors[accessorIndex].typeEnum), typeof(Vector3) );
-            #endif
+#endif
 
             var accessor = gltf.accessors[accessorIndex];
             var bufferView = gltf.bufferViews[accessor.bufferView];
