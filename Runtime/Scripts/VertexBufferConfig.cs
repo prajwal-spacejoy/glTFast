@@ -13,9 +13,6 @@
 // limitations under the License.
 //
 
-#if DEBUG
-using System.Collections.Generic;
-#endif
 using System;
 using GLTFast.Vertex;
 using Unity.Collections;
@@ -253,9 +250,6 @@ namespace GLTFast
             msh.SetVertexBufferData(vData,0,0,vData.Length,stream,flags);
             stream++;
             Profiler.EndSample();
-
-            var vext = new List<Vector2>();
-            msh.GetUVs(1, vext);
 
             if (texCoords != null) {
                 texCoords.ApplyOnMesh(msh,stream,flags);
