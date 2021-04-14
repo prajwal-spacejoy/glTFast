@@ -1,6 +1,6 @@
 # glTFast Documentation
 
-*glTFast* enables loading [glTF 3D](https://www.khronos.org/gltf) asset files in [Unity](https://unity.com).
+*glTFast* enables loading [glTF™ (GL Transmission Format)][gltf] asset files in [Unity][unity].
 
 It focuses on speed, memory efficiency and a small build footprint.
 
@@ -20,13 +20,7 @@ It supports large parts of the glTF 2.0 specification plus many extensions and r
 - Linux
 - Universal Windows Platform
 
-It is planned to become feature complete. Most notable missing features are:
-
-- No animations
-- No morph targets
-- Unity's built-in render pipeline only (URP and HDRP are planned)
-
-See the [list of features/extensions](./features.md) for details and limitations.
+It is planned to become feature complete. See the [list of features/extensions](./features.md) for details and limitations.
 
 ## Usage
 
@@ -92,7 +86,7 @@ async void Start() {
         var material = gltf.GetMaterial();
         Debug.LogFormat("The first material is called {0}", material.name);
 
-        // Instantiate the scenes multiple times
+        // Instantiate the entire glTF multiple times
         gltf.InstantiateGltf( new GameObject("Instance 1").transform );
         gltf.InstantiateGltf( new GameObject("Instance 2").transform );
         gltf.InstantiateGltf( new GameObject("Instance 3").transform );
@@ -139,7 +133,7 @@ You can solve this by using a common "defer agent". It decides if work should co
 Usage example
 
 ```C#
-async void CustomDeferAgent() {
+async Task CustomDeferAgent() {
     // Recommended: Use a common defer agent across multiple GLTFast instances!
     // For a stable frame rate:
     IDeferAgent deferAgent = gameObject.AddComponent<TimeBudgetPerFrameDeferAgent>();
@@ -150,11 +144,14 @@ async void CustomDeferAgent() {
     
     foreach( var url in manyUrls) {
         var gltf = new GLTFast.GLTFast(null,deferAgent);
-        var task = gltf.Load(url).ContinueWith(t => {
-            if (t.Result) {
-                gltf.InstantiateGltf(transform);
-            }
-        });
+        var task = gltf.Load(url).ContinueWith(
+            t => {
+                if (t.Result) {
+                    gltf.InstantiateGltf(transform);
+                }
+            },
+            TaskScheduler.FromCurrentSynchronizationContext()
+            );
         tasks.Add(task);
     }
 
@@ -198,4 +195,7 @@ Motivations for this might be using meshes as physics colliders amongst [other c
 
 It also uses fast low-level memory copy methods, [Unity's Job system](https://docs.unity3d.com/Manual/JobSystem.html) and the [Advanced Mesh API](https://docs.unity3d.com/ScriptReference/Mesh.html).
 
+[unity]: https://unity.com
+[gltf]: https://www.khronos.org/gltf
 [gltfast-web-demo]: https://gltf.pixel.engineer
+[gltfasset_component]: ./Documentation~/img/gltfasset_component.png  "Inspector showing a GltfAsset component added to a GameObject"

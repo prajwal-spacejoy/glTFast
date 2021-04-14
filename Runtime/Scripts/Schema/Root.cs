@@ -37,10 +37,12 @@ namespace GLTFast.Schema {
         /// </summary>
         public Accessor[] accessors;
 
+#if UNITY_ANIMATION
         /// <summary>
         /// An array of keyframe animations.
         /// </summary>
-        //public List<Animation> Animations;
+        public GltfAnimation[] animations;
+#endif
 
         /// <summary>
         /// Metadata about the glTF asset.
@@ -108,7 +110,11 @@ namespace GLTFast.Schema {
         /// </summary>
         public Texture[] textures;
 
-		public bool IsAccessorInterleaved( int accessorIndex ) {
+#if UNITY_ANIMATION
+        public bool hasAnimation => animations != null && animations.Length > 0;
+#endif // UNITY_ANIMATION
+        
+        public bool IsAccessorInterleaved( int accessorIndex ) {
 			var accessor = accessors[accessorIndex];
 			var bufferView = bufferViews[accessor.bufferView];
 			if (bufferView.byteStride < 0) return false;

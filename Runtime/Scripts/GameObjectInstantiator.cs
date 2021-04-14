@@ -13,8 +13,11 @@
 // limitations under the License.
 //
 
-using System.Collections.Generic;
+using System;
 using UnityEngine;
+// #if UNITY_EDITOR && UNITY_ANIMATION
+// using UnityEditor.Animations;
+// #endif
 
 namespace GLTFast {
     public class GameObjectInstantiator : IInstantiator {
@@ -53,7 +56,7 @@ namespace GLTFast {
         }
 
         public void SetNodeName(uint nodeIndex, string name) {
-            nodes[nodeIndex].name = name ?? "Node";
+            nodes[nodeIndex].name = name ?? $"Node-{nodeIndex}";
         }
 
         public virtual void AddPrimitive(
@@ -84,7 +87,7 @@ namespace GLTFast {
             } else {
                 var smr = meshGo.AddComponent<SkinnedMeshRenderer>();
                 var bones = new Transform[joints.Length];
-                for (int j = 0; j < bones.Length; j++)
+                for (var j = 0; j < bones.Length; j++)
                 {
                     var jointIndex = joints[j];
                     bones[j] = nodes[jointIndex].transform;
@@ -97,7 +100,14 @@ namespace GLTFast {
             renderer.sharedMaterials = materials;
         }
 
-        public void AddScene(string name, uint[] nodeIndices) {
+        public void AddScene(
+            string name,
+            uint[] nodeIndices
+#if UNITY_ANIMATION
+            ,AnimationClip[] animationClips
+#endif // UNITY_ANIMATION
+            )
+        {
             var go = new GameObject(name ?? "Scene");
             go.transform.SetParent( parent, false);
 
@@ -106,6 +116,53 @@ namespace GLTFast {
                     nodes[nodeIndex].transform.SetParent( go.transform, false );
                 }
             }
+
+#if UNITY_ANIMATION
+            if (animationClips != null) {
+                
+// #if UNITY_EDITOR
+//                 // This variant creates a Mecanim Animator and AnimationController
+//                 // which does not work at runtime. It's kept for potential Editor import usage
+//
+//                 var animator = go.AddComponent<Animator>();
+//                 var controller = new AnimatorController();
+//                 
+//                 for (var index = 0; index < animationClips.Length; index++) {
+//                     var clip = animationClips[index];
+//                     controller.AddLayer(clip.name);
+//                     // controller.layers[index].defaultWeight = 1;
+//                     var stateMachine = controller.layers[index].stateMachine;
+//                     AnimatorState entryState = null;
+//                     var state = stateMachine.AddState(clip.name);
+//                     state.motion = clip;
+//                     var loopTransition = state.AddTransition(state);
+//                     loopTransition.hasExitTime = true;
+//                     loopTransition.duration = 0;
+//                     loopTransition.exitTime = 0;
+//                     entryState = state;
+//                     stateMachine.AddEntryTransition(entryState);
+//                 }
+//                 
+//                 animator.runtimeAnimatorController = controller;
+//                 
+//                 for (var index = 0; index < animationClips.Length; index++) {
+//                     controller.layers[index].blendingMode = AnimatorLayerBlendingMode.Additive;
+//                     animator.SetLayerWeight(index,1);
+//                 }
+// #endif // UNITY_EDITOR
+
+                var animation = go.AddComponent<Animation>();
+                
+                for (var index = 0; index < animationClips.Length; index++) {
+                    var clip = animationClips[index];
+                    animation.AddClip(clip,clip.name);
+                    if (index < 1) {
+                        animation.clip = clip;
+                    }
+                }
+                animation.Play();
+            }
+#endif // UNITY_ANIMATION
         }
     }
 }

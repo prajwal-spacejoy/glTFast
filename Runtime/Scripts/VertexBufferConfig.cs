@@ -216,8 +216,7 @@ namespace GLTFast
             stream++;
             
             if (texCoords != null) {
-                texCoords.AddDescriptors(vad,vadCount,stream);
-                vadCount++;
+                texCoords.AddDescriptors(vad,ref vadCount,stream);
                 stream++;
             }
 
