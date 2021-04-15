@@ -9,6 +9,7 @@ namespace GLTFast.Schema
         public const string KtxMimeType = "image/ktx2";
         public static bool forceMipGeneration;
         public static bool enableTextureOverWeb;
+        public static bool enableAOTextures;
 
         static TextureType textureFetchMode = TextureType.raw;
 
@@ -17,11 +18,12 @@ namespace GLTFast.Schema
             return textureFetchMode;
         }
 
-        public static void SetLoadMode(TextureType textureFetchMode, bool forceMipGeneration, bool enableTextureOverWeb)
+        public static void SetLoadMode(TextureType textureFetchMode, bool forceMipGeneration, bool enableTextureOverWeb, bool enableAOTextures)
         {
             LoadConfig.textureFetchMode = textureFetchMode;
             LoadConfig.forceMipGeneration = forceMipGeneration;
             LoadConfig.enableTextureOverWeb = enableTextureOverWeb;
+            LoadConfig.enableAOTextures = enableAOTextures;
         }
 
     }
