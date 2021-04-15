@@ -65,13 +65,15 @@ namespace GLTFast {
             //    stream++;
             //}
 
-            if (needsNormals && !hasNormals) {
+            if (needsNormals && !hasNormals)
+            {
                 Profiler.BeginSample("Draco.RecalculateNormals");
                 // TODO: Make optional. Only calculate if actually needed
                 mesh.RecalculateNormals();
                 Profiler.EndSample();
             }
-            if(needsTangents && hasTexcoords) {
+            if (needsTangents && hasTexcoords)
+            {
                 Profiler.BeginSample("Draco.RecalculateTangents");
                 // TODO: Make optional. Only calculate if actually needed
                 mesh.RecalculateTangents();

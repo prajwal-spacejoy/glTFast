@@ -214,10 +214,13 @@ namespace GLTFast.Materials {
                 material.SetFloat(bumpScalePropId,gltfMaterial.normalTexture.scale);
             }
 
-            if(TrySetTexture(gltfMaterial.occlusionTexture,material,occlusionMapPropId,ref textures,ref schemaImages, ref imageVariants))
+            if (ExtendedGltf.enableAOTextures)
             {
-                material.EnableKeyword(KW_OCCLUSION);
-                material.SetFloat(occlusionStrengthPropId,gltfMaterial.occlusionTexture.strength);
+                if (TrySetTexture(gltfMaterial.occlusionTexture, material, occlusionMapPropId, ref textures, ref schemaImages, ref imageVariants))
+                {
+                    material.EnableKeyword(KW_OCCLUSION);
+                    material.SetFloat(occlusionStrengthPropId, gltfMaterial.occlusionTexture.strength);
+                }
             }
 
             if(TrySetTexture(gltfMaterial.emissiveTexture,material,emissionMapPropId,ref textures,ref schemaImages, ref imageVariants)) {

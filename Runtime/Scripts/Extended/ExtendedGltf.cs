@@ -4,6 +4,7 @@ using System.IO;
 public class ExtendedGltf
 {
     public static bool forceMipGeneration => LoadConfig.forceMipGeneration;
+    public static bool enableAOTextures => LoadConfig.enableAOTextures;
 
     public string currentFileUniqueID;
     public string textureCdnURL;
