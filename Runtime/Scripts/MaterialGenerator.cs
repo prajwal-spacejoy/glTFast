@@ -141,6 +141,8 @@ namespace GLTFast.Materials {
                         //}
                         material.SetTexture(propertyId,img);
                         var isKtx = txt.isKtx;
+                        if(txt.source >= 0 && txt.source <= schemaImages.Length && schemaImages[txt.source].mimeType == LoadConfig.KtxMimeType)
+                            isKtx = true;
                         TrySetTextureTransform(textureInfo,material,propertyId,isKtx);
                         return true;
                     }
