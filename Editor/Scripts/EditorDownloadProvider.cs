@@ -71,8 +71,8 @@ namespace GLTFast.Editor {
         public void Reset() {}
         
         public virtual bool success => data!=null;
-
-        public string error { get; protected set; }
+        string _error;
+        public string error { get{return _error;} set{_error = value;} }
         public byte[] data { get; }
 
         public string text => System.Text.Encoding.UTF8.GetString(data);
