@@ -1,4 +1,20 @@
-// Unity built-in shader source. Copyright (c) 2016 Unity Technologies. MIT license (see license.txt)
+// Copyright 2020 Andreas Atteneder
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+// Based on Unity built-in shader source. Copyright (c) 2016 Unity Technologies. MIT license (see license.txt)
+
 
 #ifndef UNITY_STANDARD_CORE_FORWARD_SIMPLE_INCLUDED
 #define UNITY_STANDARD_CORE_FORWARD_SIMPLE_INCLUDED
@@ -33,6 +49,14 @@ struct VertexOutputBaseSimple
 #if UNITY_REQUIRE_FRAG_WORLDPOS
     float3 posWorld                     : TEXCOORD8;
 #endif
+
+#if defined(_OCCLUSION) || defined(_METALLICGLOSSMAP) || defined(_SPECGLOSSMAP)
+    float4 texORM                       : TEXCOORD9;
+#endif
+#ifdef _EMISSION
+    float2 texEmission                  : TEXCOORD10;
+#endif
+
     half4 color                         : COLOR;
     UNITY_VERTEX_OUTPUT_STEREO
 };
@@ -131,8 +155,13 @@ FragmentCommonData FragmentSetupSimple(VertexOutputBaseSimple i)
         clip (alpha - _Cutoff);
     #endif
 
+    
+#if defined(_METALLICGLOSSMAP) || defined(_SPECGLOSSMAP)
+    FragmentCommonData s = UNITY_SETUP_BRDF_INPUT (i.tex,i.texORM.zw,i.color);
+#else
     FragmentCommonData s = UNITY_SETUP_BRDF_INPUT (i.tex,i.color);
-
+#endif
+    
     // NOTE: shader relies on pre-multiply alpha-blend (_SrcBlend = One, _DstBlend = OneMinusSrcAlpha)
     s.diffColor = PreMultiplyAlpha (s.diffColor, alpha, s.oneMinusReflectivity, /*out*/ s.alpha);
 
@@ -215,7 +244,12 @@ half4 fragForwardBaseSimpleInternal (VertexOutputBaseSimple i)
     half realtimeShadowAttenuation = SHADOW_ATTENUATION(i);
     half atten = UnityMixRealtimeAndBakedShadows(realtimeShadowAttenuation, shadowMaskAttenuation, 0);
 
-    half occlusion = Occlusion(i.tex.zw);
+    half occlusion =
+#ifdef _OCCLUSION
+        Occlusion(i.texORM.xy);
+#else
+        1;
+#endif
     half rl = dot(REFLECTVEC_FOR_SPECULAR(i, s), LightDirForSpecular(i, mainLight));
 
     UnityGI gi = FragmentGI (s, occlusion, i.ambientOrLightmapUV, atten, mainLight);
@@ -255,6 +289,13 @@ struct VertexOutputForwardAddSimple
     #endif
 #else
     half3 normalWorld                   : TEXCOORD4;
+#endif
+
+#if defined(_OCCLUSION) || defined(_METALLICGLOSSMAP) || defined(_SPECGLOSSMAP)
+    float4 texORM                       : TEXCOORD7;
+#endif
+#ifdef _EMISSION
+    float2 texEmission                  : TEXCOORD8;
 #endif
     half4 color                         : COLOR;
 
@@ -314,8 +355,12 @@ FragmentCommonData FragmentSetupSimpleAdd(VertexOutputForwardAddSimple i)
     #if defined(_ALPHATEST_ON)
         clip (alpha - _Cutoff);
     #endif
-
+   
+#if defined(_METALLICGLOSSMAP) || defined(_SPECGLOSSMAP)
+    FragmentCommonData s = UNITY_SETUP_BRDF_INPUT (i.tex,i.texORM.zw,i.color);
+#else
     FragmentCommonData s = UNITY_SETUP_BRDF_INPUT (i.tex,i.color);
+#endif
 
     // NOTE: shader relies on pre-multiply alpha-blend (_SrcBlend = One, _DstBlend = OneMinusSrcAlpha)
     s.diffColor = PreMultiplyAlpha (s.diffColor, alpha, s.oneMinusReflectivity, /*out*/ s.alpha);

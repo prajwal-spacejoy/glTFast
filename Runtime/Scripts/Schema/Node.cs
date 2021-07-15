@@ -58,5 +58,17 @@ namespace GLTFast.Schema {
         /// <summary>
         /// </summary>
         public int skin = -1;
+
+        /// <summary>
+        /// Camera index
+        /// </summary>
+        public int camera = -1;
+
+        public NodeExtensions extensions;
+    }
+    
+    [System.Serializable]
+    public class NodeExtensions {
+        public MeshGpuInstancing EXT_mesh_gpu_instancing;
     }
 }

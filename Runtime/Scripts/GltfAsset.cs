@@ -28,6 +28,9 @@ namespace GLTFast
         [Tooltip("Automatically load at start.")]
         public bool loadOnStartup = true;
         
+        [Tooltip("Override scene to load (-1 loads glTFs default scene)")]
+        public int sceneId = -1;
+        
         [Tooltip("If checked, url is treated as relative StreamingAssets path.")]
         public bool streamingAsset = false;
 
@@ -42,12 +45,24 @@ namespace GLTFast
             }
         }
 
-        public override async Task<bool> Load( string url, IDownloadProvider downloadProvider=null, IDeferAgent deferAgent=null, IMaterialGenerator materialGenerator=null ) {
-            var success = await base.Load(url, downloadProvider, deferAgent, materialGenerator);
+        public override async Task<bool> Load(
+            string url,
+            IDownloadProvider downloadProvider=null,
+            IDeferAgent deferAgent=null,
+            IMaterialGenerator materialGenerator=null,
+            ICodeLogger logger = null
+            )
+        {
+            logger = logger ?? new ConsoleLogger();
+            var success = await base.Load(url, downloadProvider, deferAgent, materialGenerator, logger);
             if(success) {
                 if (deferAgent != null) await deferAgent.BreakPoint();
                 // Auto-Instantiate
-                gLTFastInstance.InstantiateGltf(transform);
+                if (sceneId>=0) {
+                    InstantiateScene(sceneId,logger);
+                } else {
+                    Instantiate(logger);
+                }
             }
             return success;
         }

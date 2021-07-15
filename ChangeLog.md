@@ -4,27 +4,89 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2021-07-06
+### Added
+- Import setting to create non-legacy animation clips (thanks [@hybridherbst][hybridherbst] for #196)
+- Support for two texture coordinate sets in materials (URP, HDRP and Built-in; fixes #34)
+- Support for individual texture transform per texture type (URP, HDRP and Built-in)
+- Support for occlusion maps on specular-glossiness materials (extension KHR_materials_pbrSpecularGlossiness) 
+### Fixed
+- Editor import: Separate textures are only referenced in AssetDatabase (not re-added)
+- Warnings due to conflicting script file names `Animation.cs` and `Camera.cs` (#198)
+
+## [4.0.1] - 2021-06-10
+### Changed
+- Renamed `GLTFast.ILogger` to `GLTFast.ICodeLogger` to avoid confusion with `UnityEngine.ILogger` 
+### Fixed
+- Null pointer dereference exception on `accessorData` (thanks [@hybridherbst][hybridherbst])
+- Corrected flipped texture transform for KTX texture (#176)
+
+## [4.0.0] - 2021-05-21
+### Added
+- Import glTF files at design-time in the Editor
+- Custom inspector for imported glTF files, featuring import log messages
+- `ImportSettings` can be provided to `GltfImporter.Load` (optionally) to customize the loading behaviour (quite limited at the moment, but gives room to grow)
+  - `ImportSettings.nodeNameMethod` to allow customizing Node/GameObject naming convention
+- `IGltfReadable` interface for `GltfImporter`
+- Import and instantiation logging customization (see `ILogger`). Allows users to analyze log messages and/or opt out of logging all messages to the console (which is still done by default if you're using `GltfAsset`).
+- Scene support. glTF can contain multiple scenes and now it is possible to instantiate them selectively 
+  - `GltfImport.InstantiateMainScene` to create an instance of the main scene (or nothing if the `scene` is not set; following the glTF 2.0 specification)
+  - `GltfImport.InstantiateScene` to create an instance of a specific scene
+- GPU instancing via [`EXT_mesh_gpu_instancing` glTF extension](https://github.com/KhronosGroup/glTF/blob/master/extensions/2.0/Vendor/EXT_mesh_gpu_instancing/README.md) (#107).
+- Camera support (via `IInstantiator.AddCamera`; #12)
+### Changed
+- Coordinate space conversion from glTF's right-handed to Unity's left-handed system changed. Please see the [upgrade guide](./Documentation~/glTFast.md#upgrade-to-4.x) for details and the motivation behind it.
+- Nodes' names are made unique (within their hierarchical position) by supplementing a continuous number. This is required for correct animation target lookup and import continuity.
+- `IInstantiator.AddPrimitive` extended parameter `first` (`bool`; true for the first primitive) to primitiveNumeration (`int`; counting upwards from zero). This allows for creating unique GameObject names.
+- Renamed the main class `GltFast` to `GltfImporter` to properly reflect its purpose. There is a fallback `GltFast` class for backwards compatibility
+- Renamed `GltfImporter.Destroy` to `GltfImporter.Dispose` to have more consistent naming similar to native containers
+- `IMaterialGenerator` overhaul that allows more flexible generation of materials (ahead of time)
+  - `GenerateMaterial` instead of passing on all require data (like full texture arrays), data has to be fetched from the `GltfImporter`/`IGltfReadable`.
+- `IInstantiator.AddPrimitive`: Instead of `Material` the IDs/indices of materials are provided and the materials themselves have to be fetched from the `IGltfReadable`/`GltfImporter` (allowing more flexible usage)
+- `GltfImport.InstantiateGltf` (instantiates all scenes at once) is marked obsolete in favour of `InstantiateMainScene` and `InstantiateScene`
+- Performance improvement: `NativeArray` buffers are not created copying memory. Instead they are created from pinned managed byte arrays. This should have some positive effect on binary glTFs with Draco meshes and KTX textures.
+- Update to [DracoUnity 3.0.0](https://github.com/atteneder/DracoUnity/releases/tag/v3.0.0)
+### Removed
+- Runtime tests. They were moved into a [dedicated test package](https://github.com/atteneder/gltf-test-framework).
+
+## [3.3.1] - 2021-05-21
+### Fixed
+- `GltfBoundsAsset` create just one instances (was two before; fixes #182)
+
+
+## [3.3.0] - 2021-05-19
+### Added
+- Support for alpha modes `BLEND` and `MASK` on unlit materials (thanks [Sehyun av Kim](https://github.com/avseoul) for #181; fixes #180)
+### Fixed
+- Ignore / don't show errors when newer DracoUnity versions with incompatible API are installed
+
+## [3.2.1] - 2021-05-05
+### Fixed
+- Properly freeing up memory of animation clips
+- `GameObjectBoundsInstantiator` correctly calculates bounds for scenes that contain multi-primitive meshes (fixes #173)
+- Corrected linear/gamma sampling whenever texture index does not equal image index (fixes #172)
+
 ## [3.2.0] - 2020-04-13
 ### Added
 - Support for animations via Unity's legacy animation system (`Animation` component; #124)
 ### Fixed
 - Image format is properly detected from URIs with HTTP queries (thanks [JonathanB-Vobling](https://github.com/JonathanB-Vobling) for #160; fixes #158)
-- Unlit shaders are now correctly assigned for double-sided variants (thanks [@hybridherbst](https://github.com/hybridherbst) for #163)
+- Unlit shaders are now correctly assigned for double-sided variants (thanks [@hybridherbst][hybridherbst] for #163)
 - Sample code for custom defer agent is now thread safe (fixes #161)
 - Meshes with two UV sets and vertex colors now work (fixes #162)
 
 ## [3.1.0] - 2020-03-16
 ### Added
-- Unlit alpha blended ShaderGraph variants (thanks [@hybridherbst](https://github.com/hybridherbst) for #144)
+- Unlit alpha blended ShaderGraph variants (thanks [@hybridherbst][hybridherbst] for #144)
 - Support for unsigned byte joint indices
 ### Changed
 - Accelerated loading meshes by obtaining and setting bounds from accessors min/max values instead of recalculating them  
 - Improved log message when DracoUnity/KtxUnity packages are missing
 - Restored/simplified `GLTFast.LoadGltfBinary`, allowing users to load glTF binary files from byte arrays directly (also added documentation; fixes #148)
 ### Fixed
-- Texture offset/tiling values don't get lost when switching shaders (thanks [@hybridherbst](https://github.com/hybridherbst) for #140)
+- Texture offset/tiling values don't get lost when switching shaders (thanks [@hybridherbst][hybridherbst] for #140)
 - Correct vertex colors for RGB/unsigned short, RGBA/unsigned short and RGBA/unsigned byte. (thanks [@camogram](https://github.com/camogram) for #139)
-- Error when trying to set texture offset/scale but material doesn't have _MainTex property (thanks [@hybridherbst](https://github.com/hybridherbst) for #142)
+- Error when trying to set texture offset/scale but material doesn't have _MainTex property (thanks [@hybridherbst][hybridherbst] for #142)
 - Crash when trying to combine meshes created by glTFast by setting proper submesh vertex count (fixes #100)
 
 ## [3.0.2] - 2020-02-07
@@ -317,3 +379,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [0.3.0]: https://github.com/atteneder/glTFast/compare/v0.3.0...v0.2.0
 [0.2.0]: https://github.com/atteneder/glTFast/compare/v0.2.0...v0.1.0
+[hybridherbst]: https://github.com/hybridherbst

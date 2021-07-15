@@ -30,6 +30,8 @@ namespace GLTFast {
         public abstract void AddDescriptors(VertexAttributeDescriptor[] dst, int offset, int stream);
         public abstract void ApplyOnMesh(UnityEngine.Mesh msh, int stream, MeshUpdateFlags flags = PrimitiveCreateContextBase.defaultMeshUpdateFlags);
         public abstract void Dispose();
+
+        protected ICodeLogger logger;
     }
 
     class VertexBufferColors : VertexBufferColorsBase {
@@ -99,7 +101,7 @@ namespace GLTFast {
                                 inputByteStride = inputByteStride>0 ? inputByteStride : 3,
                                 result = output
                             };
-                            jobHandle = job.Schedule(output.Length,GLTFast.DefaultBatchCount);
+                            jobHandle = job.Schedule(output.Length,GltfImport.DefaultBatchCount);
                         }
                         break;
                     case GLTFComponentType.Float:
@@ -109,7 +111,7 @@ namespace GLTFast {
                                 inputByteStride = inputByteStride>0 ? inputByteStride : 12,
                                 result = output
                             };
-                            jobHandle = job.Schedule(output.Length,GLTFast.DefaultBatchCount);
+                            jobHandle = job.Schedule(output.Length,GltfImport.DefaultBatchCount);
                         }
                         break;
                     case GLTFComponentType.UnsignedShort:
@@ -119,11 +121,11 @@ namespace GLTFast {
                                 inputByteStride = inputByteStride>0 ? inputByteStride : 6,
                                 result = output
                             };
-                            jobHandle = job.Schedule(output.Length,GLTFast.DefaultBatchCount);
+                            jobHandle = job.Schedule(output.Length,GltfImport.DefaultBatchCount);
                         }
                         break;
                     default:
-                        Debug.LogErrorFormat(GLTFast.ErrorUnsupportedColorFormat, attributeType);
+                        logger?.Error(LogCode.ColorFormatUnsupported,attributeType.ToString());
                         break;
                 }
             }
@@ -138,7 +140,7 @@ namespace GLTFast {
                                 inputByteStride = inputByteStride > 0 ? inputByteStride : 4,
                                 result = output
                             };
-                            jobHandle = job.Schedule(output.Length,GLTFast.DefaultBatchCount);
+                            jobHandle = job.Schedule(output.Length,GltfImport.DefaultBatchCount);
                         }
                         break;
                     case GLTFComponentType.Float:
@@ -157,15 +159,15 @@ namespace GLTFast {
                                 inputByteStride = inputByteStride>0 ? inputByteStride : 8,
                                 result = output
                             };
-                            jobHandle = job.Schedule(output.Length,GLTFast.DefaultBatchCount);
+                            jobHandle = job.Schedule(output.Length,GltfImport.DefaultBatchCount);
                         }
                         break;
                     default:
-                        Debug.LogErrorFormat(GLTFast.ErrorUnsupportedColorFormat, attributeType);
+                        logger?.Error(LogCode.ColorFormatUnsupported, attributeType.ToString());
                         break;
                 }
             } else {
-                Debug.LogErrorFormat(GLTFast.ErrorUnsupportedType, "color accessor", inputType);
+                logger?.Error(LogCode.TypeUnsupported, "color accessor", inputType.ToString());
             }
             Profiler.EndSample();
             return jobHandle;
