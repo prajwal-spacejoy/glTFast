@@ -141,7 +141,8 @@ namespace GLTFast.Materials {
                         var isKtx = srcTexture.isKtx;
                         // added by Spacejoy for KTX texture flipping.
                         // Since we use split textures, mimetype is being set manually and isKtx will be false by default
-                        if(txt.source >= 0 && txt.source <= schemaImages.Length && schemaImages[txt.source].mimeType == LoadConfig.KtxMimeType)
+                        var schemaImages = gltf.GetAllSourceImages();
+                        if(srcTexture.source >= 0 && srcTexture.source <= schemaImages.Length && schemaImages[srcTexture.source].mimeType == LoadConfig.KtxMimeType)
                             isKtx = true;
                         TrySetTextureTransform(
                             textureInfo,

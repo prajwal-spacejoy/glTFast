@@ -511,6 +511,15 @@ namespace GLTFast {
             }
             return null;
         }
+
+        // Added by Spacejoy
+        // Returns list of images to check the image mime type for ktx textures
+        public Image[] GetAllSourceImages()
+        {
+            if (gltfRoot?.images != null)
+                return gltfRoot.images;
+            return null;
+        }
         
 #endregion Public
 
@@ -588,7 +597,10 @@ namespace GLTFast {
                 Array.Copy(urlSplit, 0, destSplitArray, 0, urlSplit.Length - 2);
                 var textureCDNCore = string.Join("/", destSplitArray);
 
-                ExtendedGltf gltfExt = new ExtendedGltf(System.IO.Path.GetFileNameWithoutExtension(baseUri.LocalPath), textureCDNCore);
+                // Changed by Spacejoy
+                // base uri removes the filename with extension at the end. ExtendedGltf constructor expects asset id as first parameter
+                var fileName_NoExtension = urlSplit[urlSplit.Length - 2];
+                ExtendedGltf gltfExt = new ExtendedGltf(fileName_NoExtension, textureCDNCore);
                 foreach (var img in gltfRoot.images)
                 {
                     gltfExt.AllocateTextureResourceFetchURI(img);
