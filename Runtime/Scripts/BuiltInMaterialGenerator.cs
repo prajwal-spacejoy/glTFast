@@ -61,6 +61,9 @@ namespace GLTFast.Materials {
         public static readonly int srcBlendPropId = Shader.PropertyToID("_SrcBlend");
         public static readonly int zWritePropId = Shader.PropertyToID("_ZWrite");
 
+        static readonly int metallicRoughnessMapScaleTransformPropId = Shader.PropertyToID("_MetallicGlossMap_ST");
+        static readonly int metallicRoughnessMapRotationPropId = Shader.PropertyToID("_MetallicGlossMapRotation");
+        static readonly int metallicRoughnessMapUVChannelPropId = Shader.PropertyToID("_MetallicGlossMapUVChannel");
         static readonly int modePropId = Shader.PropertyToID("_Mode");
 
         const string SHADER_PBR_METALLIC_ROUGHNESS = "glTF/PbrMetallicRoughness";
@@ -144,9 +147,7 @@ namespace GLTFast.Materials {
 
         public override Material GenerateMaterial(
             Schema.Material gltfMaterial,
-            ref Schema.Texture[] textures,
-            ref Schema.Image[] schemaImages,
-            ref Dictionary<int,Texture2D>[] imageVariants
+            IGltfReadable gltf
         ) {
             Material material;
             
@@ -182,9 +183,25 @@ namespace GLTFast.Materials {
                     material.SetVector(specColorPropId, specGloss.specularColor);
                     material.SetFloat(glossinessPropId,specGloss.glossinessFactor);
 
-                    TrySetTexture(specGloss.diffuseTexture,material,mainTexPropId,ref textures,ref schemaImages, ref imageVariants);
+                    TrySetTexture(
+                        specGloss.diffuseTexture,
+                        material,
+                        gltf,
+                        mainTexPropId,
+                        mainTexScaleTransform,
+                        mainTexRotation,
+                        mainTexUVChannelPropId
+                        );
 
-                    if (TrySetTexture(specGloss.specularGlossinessTexture,material,specGlossMapPropId,ref textures,ref schemaImages, ref imageVariants)) {
+                    if (TrySetTexture(
+                        specGloss.specularGlossinessTexture,
+                        material,
+                        gltf,
+                        specGlossMapPropId,
+                        specGlossScaleTransformMapPropId,
+                        specGlossMapRotationPropId,
+                        specGlossMapUVChannelPropId
+                        )) {
                         material.EnableKeyword(KW_SPEC_GLOSS_MAP);
                     }
                 }
@@ -198,32 +215,64 @@ namespace GLTFast.Materials {
                 TrySetTexture(
                     gltfMaterial.pbrMetallicRoughness.baseColorTexture,
                     material,
+                    gltf,
                     mainTexPropId,
-                    ref textures,
-                    ref schemaImages,
-                    ref imageVariants
+                    mainTexScaleTransform,
+                    mainTexRotation,
+                    mainTexUVChannelPropId
                     );
                 
-                if(TrySetTexture(gltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture,material,metallicGlossMapPropId,ref textures,ref schemaImages, ref imageVariants)) {
+                if(TrySetTexture(
+                    gltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture,
+                    material,
+                    gltf,
+                    metallicGlossMapPropId,
+                    metallicRoughnessMapScaleTransformPropId,
+                    metallicRoughnessMapRotationPropId,
+                    metallicRoughnessMapUVChannelPropId
+                    )) {
                     material.EnableKeyword(KW_METALLIC_ROUGNESS_MAP);
                 }
             }
 
-            if(TrySetTexture(gltfMaterial.normalTexture,material,bumpMapPropId,ref textures,ref schemaImages, ref imageVariants)) {
+            if(TrySetTexture(
+                gltfMaterial.normalTexture,
+                material,
+                gltf,
+                bumpMapPropId,
+                bumpMapScaleTransformPropId,
+                bumpMapRotationPropId,
+                bumpMapUVChannelPropId
+            )) {
                 material.EnableKeyword(KW_NORMALMAP);
                 material.SetFloat(bumpScalePropId,gltfMaterial.normalTexture.scale);
             }
-
+            
             if (ExtendedGltf.enableAOTextures)
             {
-                if (TrySetTexture(gltfMaterial.occlusionTexture, material, occlusionMapPropId, ref textures, ref schemaImages, ref imageVariants))
-                {
+                if(TrySetTexture(
+                    gltfMaterial.occlusionTexture,
+                    material,
+                    gltf,
+                    occlusionMapPropId,
+                    occlusionMapScaleTransformPropId,
+                    occlusionMapRotationPropId,
+                    occlusionMapUVChannelPropId
+                    )) {
                     material.EnableKeyword(KW_OCCLUSION);
-                    material.SetFloat(occlusionStrengthPropId, gltfMaterial.occlusionTexture.strength);
+                    material.SetFloat(occlusionStrengthPropId,gltfMaterial.occlusionTexture.strength);
                 }
             }
 
-            if(TrySetTexture(gltfMaterial.emissiveTexture,material,emissionMapPropId,ref textures,ref schemaImages, ref imageVariants)) {
+            if(TrySetTexture(
+                gltfMaterial.emissiveTexture,
+                material,
+                gltf,
+                emissionMapPropId,
+                emissionMapScaleTransformPropId,
+                emissionMapRotationPropId,
+                emissionMapUVChannelPropId
+                )) {
                 material.EnableKeyword(KW_EMISSION);
             }
 
@@ -233,7 +282,7 @@ namespace GLTFast.Materials {
                 var transmission = gltfMaterial.extensions.KHR_materials_transmission;
                 if (transmission != null) {
 #if UNITY_EDITOR
-                    Debug.LogWarning("Chance of incorrect materials! glTF transmission is approximated when using built-in render pipeline!");
+                    logger?.Warning(LogCode.MaterialTransmissionApprox);
 #endif
                     // Correct transmission is not supported in Built-In renderer
                     // This is an approximation for some corner cases

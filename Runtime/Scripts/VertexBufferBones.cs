@@ -27,6 +27,13 @@ namespace GLTFast {
     using Schema;
 
     abstract class VertexBufferBonesBase {
+        
+        protected ICodeLogger logger;
+
+        public VertexBufferBonesBase(ICodeLogger logger) {
+            this.logger = logger;
+        }
+
         public abstract unsafe bool ScheduleVertexBonesJob(
             VertexInputData weightsInput,
             VertexInputData jointsInput,
@@ -40,6 +47,8 @@ namespace GLTFast {
     class VertexBufferBones : VertexBufferBonesBase {
         NativeArray<VBones> vData;
 
+        public VertexBufferBones(ICodeLogger logger) : base(logger) {}
+        
         public override unsafe bool ScheduleVertexBonesJob(
             VertexInputData weightsInput,
             VertexInputData jointsInput,
@@ -76,7 +85,8 @@ namespace GLTFast {
                     jointsInput.type,
                     jointsInput.byteStride,
                     (uint*)(vDataPtr+16),
-                    32
+                    32,
+                    logger
                 );
                 if (h.HasValue) {
                     handles[1] = h.Value;
@@ -125,7 +135,7 @@ namespace GLTFast {
                     jobTangentI.input = (byte*)input;
                     jobTangentI.outputByteStride = outputByteStride;
                     jobTangentI.result = output;
-                    jobHandle = jobTangentI.Schedule(count,GLTFast.DefaultBatchCount);
+                    jobHandle = jobTangentI.Schedule(count,GltfImport.DefaultBatchCount);
                     break;
                 // TODO: Complete those cases
                 // case GLTFComponentType.UnsignedShort:
@@ -133,7 +143,7 @@ namespace GLTFast {
                 // case GLTFComponentType.UnsignedByte:
                 //     break;
                 default:
-                    Debug.LogErrorFormat( GLTFast.ErrorUnsupportedType, "Weights", inputType);
+                    logger?.Error(LogCode.TypeUnsupported,"Weights",inputType.ToString());
                     jobHandle = null;
                     break;
             }
@@ -148,7 +158,8 @@ namespace GLTFast {
             GLTFComponentType inputType,
             int inputByteStride,
             uint* output,
-            int outputByteStride
+            int outputByteStride,
+            ICodeLogger logger
         )
         {
             Profiler.BeginSample("GetJointsJob");
@@ -160,7 +171,7 @@ namespace GLTFast {
                     jointsUInt8Job.input = (byte*)input;
                     jointsUInt8Job.outputByteStride = outputByteStride;
                     jointsUInt8Job.result = output;
-                    jobHandle = jointsUInt8Job.Schedule(count,GLTFast.DefaultBatchCount);
+                    jobHandle = jointsUInt8Job.Schedule(count,GltfImport.DefaultBatchCount);
                     break;
                 case GLTFComponentType.UnsignedShort:
                     var jointsUInt16Job = new Jobs.GetJointsUInt16Job();
@@ -168,10 +179,10 @@ namespace GLTFast {
                     jointsUInt16Job.input = (byte*)input;
                     jointsUInt16Job.outputByteStride = outputByteStride;
                     jointsUInt16Job.result = output;
-                    jobHandle = jointsUInt16Job.Schedule(count,GLTFast.DefaultBatchCount);
+                    jobHandle = jointsUInt16Job.Schedule(count,GltfImport.DefaultBatchCount);
                     break;
                 default:
-                    Debug.LogErrorFormat( GLTFast.ErrorUnsupportedType, "Joints", inputType);
+                    logger?.Error(LogCode.TypeUnsupported, "Joints", inputType.ToString());
                     jobHandle = null;
                     break;
             }

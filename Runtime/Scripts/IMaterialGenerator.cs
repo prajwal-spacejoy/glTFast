@@ -13,8 +13,6 @@
 // limitations under the License.
 //
 
-using System.Collections.Generic;
-
 namespace GLTFast {
     using Schema;
     public interface IMaterialGenerator {
@@ -25,11 +23,21 @@ namespace GLTFast {
         /// <returns>fallback material</returns>
         UnityEngine.Material GetDefaultMaterial();
 
-        UnityEngine.Material GenerateMaterial(
-            Material gltfMaterial,
-            ref Schema.Texture[] textures,
-            ref Schema.Image[] schemaImages,
-            ref Dictionary<int,UnityEngine.Texture2D>[] imageVariants
-            );
+        /// <summary>
+        /// Converts a glTF material into a Unity <see cref="Material"/>.
+        /// <see cref="gltfMaterial"/> might reference textures, which can be queried from <see cref="gltf"/>
+        /// </summary>
+        /// <param name="gltfMaterial">Source glTF material</param>
+        /// <param name="gltf">Interface to a loaded glTF's resources (e.g. textures)</param>
+        /// <returns></returns>
+        UnityEngine.Material GenerateMaterial(Material gltfMaterial, IGltfReadable gltf);
+
+        /// <summary>
+        /// Is called prior to <seealso cref="GenerateMaterial"/>. The logger should be used
+        /// to inform users about incidents of arbitrary severity (error,warning or info)
+        /// during material generation.
+        /// </summary>
+        /// <param name="logger"></param>
+        void SetLogger(ICodeLogger logger);
     }
 }

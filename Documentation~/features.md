@@ -3,7 +3,7 @@
 - [x] Runtime import
 - [x] Fast and small footprint JSON parsing
 - [x] Multi-threading via C# job system
-- [ ] Editor import
+- [x] Editor import
 - [ ] Export
 
 ## Core glTF features
@@ -13,7 +13,7 @@
 
 - [x] Scene
   - [x] Node hierarchy
-  - [ ] Camera ([issue][Cameras])
+  - [x] Camera
 - [x] Buffers
   - [x] External URIs
   - [x] glTF binary main buffer
@@ -43,7 +43,8 @@
   - [x] Draco mesh compression (via [Draco 3D Data Compression Unity Package](https://github.com/atteneder/DracoUnity))
   - [x] Implicit (no) indices
   - [x] Per primitive material
-  - [ ] Multiple texture coordinates / UV sets ([issue][UVsets])
+  - [x] Two texture coordinates / UV sets
+    - [ ] Three or more texture coordinates / UV sets ([issue][UVsets])
   - [x] Joints (up to 4 per vertex)
   - [x] Weights (up to 4 per vertex)
 - [x] Texture sampler
@@ -68,19 +69,18 @@
 - [x] KHR_draco_mesh_compression
 - [x] KHR_materials_pbrSpecularGlossiness
 - [x] KHR_materials_unlit
-- [x] <sup>1</sup>KHR_texture_transform
+- [x] KHR_texture_transform
 - [x] KHR_mesh_quantization
-- [x] <sup>2</sup>KHR_texture_basisu
+- [x] KHR_texture_basisu
 - [ ] KHR_lights_punctual ([issue][PointLights])
 - [ ] KHR_materials_clearcoat ([issue][ClearCoat])
 - [ ] KHR_materials_sheen ([issue][Sheen])
 - [ ] KHR_materials_transmission ([issue][Transmission])
 - [ ] KHR_materials_variants ([issue][Variants])
+- [ ] KHR_materials_ior ([issue][IOR])
+- [ ] KHR_materials_specular ([issue][Specular])
+- [ ] KHR_materials_volume ([issue][Volume])
 - [ ] KHR_xmp
-
-<sup>1</sup>: See [Materials](#materials) for limitations
-
-<sup>2</sup>: Beta
 
 Will not be supported:
 
@@ -88,9 +88,11 @@ Will not be supported:
 
 ### Vendor extensions
 
-- [ ] EXT_mesh_gpu_instancing ([issue][GPUinstancing])
+- [x] <sup>1</sup>EXT_mesh_gpu_instancing
 - [ ] EXT_meshopt_compression ([issue][MeshOpt])
 - [ ] EXT_lights_image_based ([issue][IBL])
+
+<sup>1</sup>: Without support for custom vertex attributes (e.g. `_ID`)
 
 Not investigated yet:
 
@@ -122,16 +124,19 @@ Will not be supported:
 | Alpha modes OPAQUE/MASK/BLEND | ✅  | ✅   | ✅       |
 | Double sided / Two sided      | ✅  | ✅   | ✅       |
 | Vertex colors                 | ✅  | ✅   | ✅       |
-| Multiple UV sets              | [ℹ][UVsets] | [ℹ][UVsets] | [❌][newIssue] |
-| Texture Transform             | ✓<sup>2</sup>  | ✓<sup>2</sup>   | ✓<sup>2</sup>       |
+| Multiple UV sets              | ✅<sup>2</sup>  | ✅<sup>2</sup>   | ✅<sup>2</sup>       |
+| Texture Transform             | ✅  | ✅   | ✅       |
 | Clear coat                    | [ℹ][ClearCoat] | [ℹ][ClearCoat] | [❌][ClearCoat] |
 | Sheen                         | [ℹ][Sheen] | [ℹ][Sheen] | [❌][Sheen] |
 | Transmission                  | [✓][Transmission]<sup>3</sup> | [✓][Transmission]<sup>4</sup> | [✓][Transmission]<sup>4</sup> |
 | Variants                      | [ℹ][Variants] | [ℹ][Variants] | [ℹ][Variants] |
+| IOR                           | [ℹ][IOR]      | [ℹ][IOR]      | [❌][IOR]      |
+| Specular                      | [ℹ][Specular] | [ℹ][Specular] | [❌][Specular] |
+| Volume                        | [ℹ][Volume]   | [ℹ][Volume]   | [❌][Volume]   |
 
 <sup>1</sup>: Physically-Based Rendering (PBR) material model
 
-<sup>2</sup>: The texture transform of baseColorTexture (or diffuseTexture for Specular-Glossiness) is re-used for all other textures. If you need different texture transforms for different texture types, [create an issue][newIssue].
+<sup>2</sup>: Two sets of texture coordinates (as required by the glTF 2.0 specification) are supported, but not three or more ([issue][UVSets])
 
 <sup>3</sup>: There are two approximation implementations for transmission in Universal render pipeline. If the Opaque Texture is enabled (in the Universal RP Asset settings), it is sampled to provide proper transmissive filtering. The downside of this approach is transparent objects are not rendered on top of each other. If the opaque texture is not available, the common approximation (see <sup>4</sup> below) is used.
 
@@ -151,25 +156,25 @@ Legend:
 - Texture sampler minification/magnification filter limitations (see [issue][SamplerFilter]):
   - <sup>1</sup>There's no differentiation between `minFilter` and `magFilter`. `minFilter` settings are prioritized.
   - <sup>1</sup>`minFilter` mode `NEAREST_MIPMAP_LINEAR` is not supported and will result in `NEAREST`.
-- When building for WebGL with Unity 2018.1 you have to enable explicitly thrown exceptions (reason unknown - to be investigated)
 
 <sup>1</sup>: A Unity API limitation.
 
 [AnimationMecanim]: https://github.com/atteneder/glTFast/issues/167
 [AnimationPlayables]: https://github.com/atteneder/glTFast/issues/166  
-[URP]: https://unity.com/srp/universal-render-pipeline
-[HDRP]: https://unity.com/srp/High-Definition-Render-Pipeline
-[newIssue]: https://github.com/atteneder/glTFast/issues/new
-[Cameras]: https://github.com/atteneder/glTFast/issues/12
-[MorphTargets]: https://github.com/atteneder/glTFast/issues/8
-[PointLights]: https://github.com/atteneder/glTFast/issues/17
-[Skins]: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#skins
-[UVsets]: https://github.com/atteneder/glTFast/issues/34
 [ClearCoat]: https://github.com/atteneder/glTFast/issues/68
-[Sheen]: https://github.com/atteneder/glTFast/issues/110
-[Transmission]: https://github.com/atteneder/glTFast/issues/111
-[Variants]: https://github.com/atteneder/glTFast/issues/112
-[GPUinstancing]: https://github.com/atteneder/glTFast/issues/107
-[MeshOpt]: https://github.com/atteneder/glTFast/issues/106
+[HDRP]: https://unity.com/srp/High-Definition-Render-Pipeline
 [IBL]: https://github.com/atteneder/glTFast/issues/108
+[IOR]: https://github.com/atteneder/glTFast/issues/207
+[MeshOpt]: https://github.com/atteneder/glTFast/issues/106
+[MorphTargets]: https://github.com/atteneder/glTFast/issues/8
+[newIssue]: https://github.com/atteneder/glTFast/issues/new
+[PointLights]: https://github.com/atteneder/glTFast/issues/17
 [SamplerFilter]: https://github.com/atteneder/glTFast/issues/61 
+[Sheen]: https://github.com/atteneder/glTFast/issues/110
+[Skins]: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#skins
+[Specular]: https://github.com/atteneder/glTFast/issues/208
+[Transmission]: https://github.com/atteneder/glTFast/issues/111
+[URP]: https://unity.com/srp/universal-render-pipeline
+[UVsets]: https://github.com/atteneder/glTFast/issues/206
+[Variants]: https://github.com/atteneder/glTFast/issues/112
+[Volume]: https://github.com/atteneder/glTFast/issues/209

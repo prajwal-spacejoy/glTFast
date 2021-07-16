@@ -25,15 +25,22 @@ Properties {
     _Color ("Main Color", Color) = (1,1,1,1)
     _MainTex ("Base (RGB)", 2D) = "white" {}
     _MainTexRotation ("Texture rotation", Vector) = (0,0,0,0)
+    [Enum(UV0,0,UV1,1)] _MainTexUVChannel ("Base Color Map UV Set", Float) = 0
+    _Cutoff("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
+    [HideInInspector] _Mode ("__mode", Float) = 0.0
+    [HideInInspector] _SrcBlend ("__src", Float) = 1.0
+    [HideInInspector] _DstBlend ("__dst", Float) = 0.0
+    [HideInInspector] _ZWrite ("__zw", Float) = 1.0
     [Enum(UnityEngine.Rendering.CullMode)] _CullMode ("Cull Mode", Float) = 2.0
 }
 
 SubShader {
-    Tags { "RenderType"="Opaque" }
     LOD 100
 
     Pass {
         
+        Blend [_SrcBlend] [_DstBlend]
+        ZWrite [_ZWrite]
         Cull [_CullMode]
 
         CGPROGRAM
@@ -42,12 +49,15 @@ SubShader {
             #pragma target 2.0
             #pragma multi_compile_fog
             #pragma shader_feature_local _UV_ROTATION
+            #pragma shader_feature_local _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON
 
             #include "UnityCG.cginc"
+            #include "glTFIncludes/glTFUnityStandardInput.cginc"
 
             struct appdata_t {
                 float4 vertex : POSITION;
-                float2 texcoord : TEXCOORD0;
+                float2 texcoord0 : TEXCOORD0;
+                float2 texcoord1 : TEXCOORD1;
                 fixed4 color : COLOR;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
@@ -60,11 +70,6 @@ SubShader {
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            half4 _Color;
-            sampler2D _MainTex;
-            float4 _MainTex_ST;
-            float4 _MainTexRotation;
-
             v2f vert (appdata_t v)
             {
                 v2f o;
@@ -73,12 +78,9 @@ SubShader {
                 o.vertex = UnityObjectToClipPos(v.vertex);
 
 #ifdef _UV_ROTATION
-                // 2x2 matrix multiplication to apply rotation
-                o.texcoord.x = v.texcoord.x * _MainTexRotation.x + v.texcoord.y * _MainTexRotation.z;
-                o.texcoord.y = v.texcoord.x * _MainTexRotation.y + v.texcoord.y * _MainTexRotation.w;
-                o.texcoord = TRANSFORM_TEX(o.texcoord, _MainTex);
+                o.texcoord = TexCoordsSingle((_MainTexUVChannel==0)?v.texcoord0:v.texcoord1,_MainTex);
 #else
-                o.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
+                o.texcoord = TRANSFORM_TEX((_MainTexUVChannel==0)?v.texcoord0:v.texcoord1, _MainTex);
 #endif
 
                 UNITY_TRANSFER_FOG(o,o.vertex);
@@ -89,9 +91,14 @@ SubShader {
             fixed4 frag (v2f i) : SV_Target
             {
                 fixed4 col = tex2D(_MainTex, i.texcoord) * _Color;
-                UNITY_APPLY_FOG(i.fogCoord, col);
-                UNITY_OPAQUE_ALPHA(col.a);
                 col *= i.color;
+#ifdef _ALPHATEST_ON
+                clip(col.a - _Cutoff);
+#endif
+                UNITY_APPLY_FOG(i.fogCoord, col);
+#if !defined(_ALPHATEST_ON) &&  !defined(_ALPHABLEND_ON) && !defined(_ALPHAPREMULTIPLY_ON)
+                UNITY_OPAQUE_ALPHA(col.a);
+#endif
                 return col;
             }
         ENDCG
