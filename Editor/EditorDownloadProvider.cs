@@ -64,6 +64,8 @@ namespace GLTFast.Editor {
         public void Reset() {}
         
         public virtual bool success => data!=null;
+        // Changed by Spacejoy
+        // Created new _error variable and modified property access from protected to public
         string _error;
         public string error { get{return _error;} set{_error = value;} }
         public byte[] data { get; }
