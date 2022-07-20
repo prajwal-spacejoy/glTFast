@@ -26,7 +26,7 @@ namespace GLTFast {
 
     class PrimitiveDracoCreateContext : PrimitiveCreateContextBase {
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
         DracoMeshLoader draco;
         Task<Mesh> dracoTask;
         Bounds? bounds;
@@ -50,9 +50,9 @@ namespace GLTFast {
         }
         
         public override async Task<Primitive?> CreatePrimitive() {
-=======
+//=======
 
-        public VertexBufferTexCoordsBase texCoords;
+        /*public VertexBufferTexCoordsBase texCoords;
 
         public override bool IsCompleted {
             get {
@@ -64,8 +64,8 @@ namespace GLTFast {
             jobHandle.Complete();
             int result = dracoResult[0];
             IntPtr dracoMesh = dracoPtr[0];
-            Debug.Log("PRajwal =>>>>>>>>>>>>>>>>>>>>>>> Creating a Draco here, finally");
->>>>>>> 237fe1b (temporary changes)
+            Debug.Log("PRajwal =>>>>>>>>>>>>>>>>>>>>>>> Creating a Draco here, finally");*/
+//>>>>>>> 237fe1b (temporary changes)
 
             var mesh = dracoTask.Result;
             dracoTask.Dispose();
@@ -74,7 +74,7 @@ namespace GLTFast {
                 return null;
             }
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
             if (bounds.HasValue) {
                 mesh.bounds = bounds.Value;
                 
@@ -90,8 +90,8 @@ namespace GLTFast {
                 }
             } else {
                 mesh.RecalculateBounds();
-=======
-            Profiler.BeginSample("DracoMeshLoader.CreateMesh");
+//=======
+            /*Profiler.BeginSample("DracoMeshLoader.CreateMesh");
             bool hasTexcoords;
             bool hasNormals;
             var mesh = DracoMeshLoader.CreateMesh(dracoMesh, out hasNormals, out hasTexcoords);
@@ -108,8 +108,8 @@ namespace GLTFast {
                 Profiler.BeginSample("Draco.RecalculateNormals");
                 // TODO: Make optional. Only calculate if actually needed
                 mesh.RecalculateNormals();
-                Profiler.EndSample();
->>>>>>> 237fe1b (temporary changes)
+                Profiler.EndSample();*/
+//>>>>>>> 237fe1b (temporary changes)
             }
             
             if (morphTargetsContext != null) {

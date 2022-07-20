@@ -293,7 +293,7 @@ namespace GLTFast.Materials {
                 material.SetFloat(bumpScalePropId,gltfMaterial.normalTexture.scale);
             }
 
-<<<<<<< HEAD:Runtime/Scripts/Material/BuiltInMaterialGenerator.cs
+//<<<<<<< HEAD:Runtime/Scripts/Material/BuiltInMaterialGenerator.cs
             if(TrySetTexture(
                 gltfMaterial.occlusionTexture,
                 material,
@@ -303,11 +303,11 @@ namespace GLTFast.Materials {
                 occlusionMapRotationPropId,
                 occlusionMapUVChannelPropId
                 )) {
-=======
-            if(TrySetTexture(gltfMaterial.occlusionTexture,material,occlusionMapPropId,ref textures,ref schemaImages, ref imageVariants))
-            {
-                Debug.LogError("Prajwal: sdIm setting occlusion here");
->>>>>>> 237fe1b (temporary changes):Runtime/Scripts/BuiltInMaterialGenerator.cs
+//=======
+            //if(TrySetTexture(gltfMaterial.occlusionTexture,material,occlusionMapPropId,ref textures,ref schemaImages, ref imageVariants))
+            //{
+                //Debug.LogError("Prajwal: sdIm setting occlusion here");
+//>>>>>>> 237fe1b (temporary changes):Runtime/Scripts/BuiltInMaterialGenerator.cs
                 material.EnableKeyword(KW_OCCLUSION);
                 material.SetFloat(occlusionStrengthPropId,gltfMaterial.occlusionTexture.strength);
             }

@@ -53,14 +53,14 @@ namespace GLTFast {
             vData = new NativeArray<T>( vertexCount, VertexBufferConfigBase.defaultAllocator);
             var vDataPtr = (byte*) NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(vData);
             Profiler.EndSample();
-<<<<<<< HEAD
+//<<<<<<< HEAD
             uvSetCount = uvAccessorIndices.Length;
             int outputByteStride = uvAccessorIndices.Length * 8;
-=======
-            uvSetCount = uvInputs.Length;
+//=======
+            //uvSetCount = uvInputs.Length;
 
-            int outputByteStride = uvInputs.Length * 8;
->>>>>>> 237fe1b (temporary changes)
+            //int outputByteStride = uvInputs.Length * 8;
+//>>>>>>> 237fe1b (temporary changes)
 
             for (int i=0; i<uvAccessorIndices.Length; i++) {
                 var accIndex = uvAccessorIndices[i];

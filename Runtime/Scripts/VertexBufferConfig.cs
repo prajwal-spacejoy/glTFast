@@ -331,21 +331,21 @@ namespace GLTFast
             stream++;
             Profiler.EndSample();
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
             if (colors != null) {
                 colors.ApplyOnMesh(msh,stream,flags);
                 stream++;
             }
             
-=======
+//=======
 
-            Debug.Log("PRajwal =>>>>>>>>>>>>>>>>>>>>>>> aoplying uv on mesh new mesh here, finally");
+            /*Debug.Log("PRajwal =>>>>>>>>>>>>>>>>>>>>>>> aoplying uv on mesh new mesh here, finally");
             var vext = new List<Vector2>();
             msh.GetUVs(1, vext);
             Debug.Log("Prajwal vex count after"+ vext.Count);
-            Debug.Log("Prajwal vex count after" + JsonUtility.ToJson(vext));
+            Debug.Log("Prajwal vex count after" + JsonUtility.ToJson(vext));*/
 
->>>>>>> 237fe1b (temporary changes)
+//>>>>>>> 237fe1b (temporary changes)
             if (texCoords != null) {
                 texCoords.ApplyOnMesh(msh,stream,flags);
                 stream++;
