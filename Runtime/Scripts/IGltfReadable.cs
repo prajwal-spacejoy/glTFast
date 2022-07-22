@@ -113,6 +113,13 @@ namespace GLTFast {
         /// <param name="index">glTF image index</param>
         /// <returns>De-serialized glTF image</returns>
         Schema.Image GetSourceImage(int index = 0);
+        
+        /// <summary>
+        /// Added by Spacejoy for ktx texture flip
+        /// </summary>
+        /// <returns></returns>
+        Schema.Image[] GetAllSourceImages();
+        
         Schema.LightPunctual GetSourceLightPunctual(uint index);
 
         /// <summary>
