@@ -1,5 +1,6 @@
 {
     "name": "glTFast",
+    "rootNamespace": "",
     "references": [
         "glTFastSchema",
         "glTFastFakeSchema",
@@ -11,7 +12,8 @@
         "Ktx",
         "Unity.Meshopt.Decompress",
         "Unity.RenderPipelines.Universal.Runtime",
-        "Unity.RenderPipelines.HighDefinition.Runtime"
+        "Unity.RenderPipelines.HighDefinition.Runtime",
+        "glTFExtended"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
