@@ -1,4 +1,4 @@
-﻿// Copyright 2020-2021 Andreas Atteneder
+﻿// Copyright 2020-2022 Andreas Atteneder
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,15 +15,22 @@
 
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace GLTFast
 {
+    using Logging;
     using Loading;
+    using Materials;
 
-    public class GltfAssetBase : MonoBehaviour
+    /// <summary>
+    /// Base component for code-less loading of glTF files
+    /// </summary>
+    public abstract class GltfAssetBase : MonoBehaviour
     {
-        protected GltfImport importer;
+        /// <summary>
+        /// Instance used for loading the glTF's content
+        /// </summary>
+        public GltfImport importer { get; protected set; }
         
         /// <summary>
         /// Indicates wheter the glTF was loaded (no matter if successfully or not)
@@ -31,12 +38,11 @@ namespace GLTFast
         /// <value>True when loading routine ended, false otherwise.</value>
         public bool isDone => importer!=null && importer.LoadingDone;
         
-        public int? currentSceneId { get; protected set; }
-        
         /// <summary>
-        /// Latest scene's instance.  
+        /// Scene ID of the recently instantiated scene. Null if there was no
+        /// scene instantiated (successfully).
         /// </summary>
-        public GameObjectInstantiator.SceneInstance sceneInstance { get; protected set; }
+        public int? currentSceneId { get; protected set; }
         
         /// <summary>
         /// Method for manual loading with custom <see cref="IDownloadProvider"/> and <see cref="IDeferAgent"/>.
@@ -47,6 +53,7 @@ namespace GLTFast
         /// loading procedure in order to keep the frame rate responsive.</param>
         /// <param name="materialGenerator">Used to convert glTF materials to <see cref="Material"/> instances</param>
         /// <param name="logger">Used for message reporting</param>
+        /// <returns>Async Task that loads the glTF's contents</returns>
         public virtual async Task<bool> Load(
             string url,
             IDownloadProvider downloadProvider=null,
@@ -68,8 +75,7 @@ namespace GLTFast
             if (importer == null) return false;
             var instantiator = GetDefaultInstantiator(logger);
             var success = importer.InstantiateMainScene(instantiator);
-            sceneInstance = instantiator.sceneInstance;
-            currentSceneId = success ? importer.defaultSceneIndex : (int?)null;
+            PostInstantiation(instantiator, success);
             return success;
         }
 
@@ -83,8 +89,7 @@ namespace GLTFast
             if (importer == null) return false;
             var instantiator = GetDefaultInstantiator(logger);
             var success = importer.InstantiateScene(instantiator,sceneIndex);
-            sceneInstance = instantiator.sceneInstance;
-            currentSceneId = success ? sceneIndex : (int?)null;
+            PostInstantiation(instantiator, success);
             return success;
         }
 
@@ -97,20 +102,14 @@ namespace GLTFast
         protected bool InstantiateScene(int sceneIndex, GameObjectInstantiator instantiator) {
             if (importer == null) return false;
             var success = importer.InstantiateScene(instantiator,sceneIndex);
-            sceneInstance = instantiator.sceneInstance;
-            currentSceneId = success ? sceneIndex : (int?)null;
+            PostInstantiation(instantiator, success);
             return success;
         }
 
         /// <summary>
         /// Removes previously instantiated scene(s)
         /// </summary>
-        public void ClearScenes() {
-            foreach (Transform child in transform) {
-                Destroy(child.gameObject);
-            }
-            sceneInstance = null;
-        }
+        public abstract void ClearScenes();
 
         /// <summary>
         /// Returns an imported glTF material.
@@ -142,17 +141,39 @@ namespace GLTFast
                 return null;
             }
         }
+
+        /// <summary>
+        /// Returns an instance of the default instantiator
+        /// </summary>
+        /// <param name="logger">Custom logger to use with the instantiator</param>
+        /// <returns>Default instantiator instance</returns>
+        protected abstract IInstantiator GetDefaultInstantiator(ICodeLogger logger);
         
-        protected virtual GameObjectInstantiator GetDefaultInstantiator(ICodeLogger logger) {
-            return new GameObjectInstantiator(importer, transform, logger);
+        /// <summary>
+        /// Callback that is called after instantiation
+        /// </summary>
+        /// <param name="instantiator">instantiator that was used</param>
+        /// <param name="success">True if instantiation was successful, false otherwise</param>
+        protected virtual void PostInstantiation(IInstantiator instantiator, bool success) {
+            currentSceneId = success ? importer.defaultSceneIndex : (int?)null;
         }
 
-        protected virtual void OnDestroy()
-        {
+        /// <summary>
+        /// Releases previously allocated resources.
+        /// </summary>
+        public void Dispose() {
             if(importer!=null) {
                 importer.Dispose();
                 importer=null;
             }
+        }
+
+        /// <summary>
+        /// Called before GameObject is destroyed
+        /// </summary>
+        protected virtual void OnDestroy()
+        {
+            Dispose();
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright 2020-2021 Andreas Atteneder
+﻿// Copyright 2020-2022 Andreas Atteneder
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 //
 
 using UnityEngine.Rendering;
+using System.Threading.Tasks;
 
 namespace GLTFast {
     
@@ -32,6 +33,9 @@ namespace GLTFast {
         public bool needsNormals;
         public bool needsTangents;
         public abstract bool IsCompleted {get;}
-        public abstract Primitive? CreatePrimitive();
+        
+        public MorphTargetsContext morphTargetsContext;
+        
+        public abstract Task<Primitive?> CreatePrimitive();
     }
 } 

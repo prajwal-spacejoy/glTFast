@@ -1,4 +1,4 @@
-﻿// Copyright 2020-2021 Andreas Atteneder
+﻿// Copyright 2020-2022 Andreas Atteneder
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,12 +13,17 @@
 // limitations under the License.
 //
 
+#if DEBUG
+using System.Collections.Generic;
+#endif
 using System;
 using GLTFast.Vertex;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 
@@ -27,7 +32,7 @@ namespace GLTFast
 #if BURST
     using Unity.Mathematics;
 #endif
-    using Schema;
+    using Logging;
 
     class VertexBufferConfig<VType> :
         VertexBufferConfigBase
@@ -56,39 +61,55 @@ namespace GLTFast
         public VertexBufferConfig(ICodeLogger logger) : base(logger) {}
 
         public override unsafe JobHandle? ScheduleVertexJobs(
-            VertexInputData posInput,
-            VertexInputData? nrmInput = null,
-            VertexInputData? tanInput = null,
-            VertexInputData[] uvInputs = null,
-            VertexInputData? colorInput = null,
-            VertexInputData? weightsInput = null,
-            VertexInputData? jointsInput = null
+            IGltfBuffers buffers,
+            int positionAccessorIndex,
+            int normalAccessorIndex,
+            int tangentAccessorIndex,
+            int[] uvAccessorIndices,
+            int colorAccessorIndex,
+            int weightsAccessorIndex,
+            int jointsAccessorIndex
         ) {
+            buffers.GetAccessor(positionAccessorIndex, out var posAcc, out var posData, out var posByteStride);
+            
             Profiler.BeginSample("ScheduleVertexJobs");
             Profiler.BeginSample("AllocateNativeArray");
-            vData = new NativeArray<VType>(posInput.count,defaultAllocator);
+            vData = new NativeArray<VType>(posAcc.count,defaultAllocator);
             var vDataPtr = (byte*) vData.GetUnsafeReadOnlyPtr();
             Profiler.EndSample();
 
-            bounds = posInput.bounds;
+            bounds = posAcc.TryGetBounds();
             
             int jobCount = 1;
             int outputByteStride = 12; // sizeof Vector3
-            hasNormals = nrmInput.HasValue || calculateNormals; 
+            if (posAcc.isSparse && posAcc.bufferView>=0) {
+                jobCount++;
+            }
+            if (normalAccessorIndex>=0) {
+                jobCount++;
+                hasNormals = true;
+            }
+            hasNormals |= calculateNormals;
             if (hasNormals) {
-                if(nrmInput.HasValue) jobCount++;
                 outputByteStride += 12;
             }
 
-            hasTangents = tanInput.HasValue || calculateTangents;
+            if (tangentAccessorIndex>=0) {
+                jobCount++;
+                hasTangents = true;
+            }
+            hasTangents |= calculateTangents;
             if (hasTangents) {
-                if(tanInput.HasValue) jobCount++;
                 outputByteStride += 16;
             }
             
-            if (uvInputs!=null && uvInputs.Length>0) {
-                jobCount += uvInputs.Length;
-                switch (uvInputs.Length) {
+            if (uvAccessorIndices!=null && uvAccessorIndices.Length>0) {
+                
+                // More than two UV sets are not supported yet
+                Assert.IsTrue(uvAccessorIndices.Length<3);
+                
+                jobCount += uvAccessorIndices.Length;
+                switch (uvAccessorIndices.Length) {
                     case 1:
                         texCoords = new VertexBufferTexCoords<VTexCoord1>(logger);
                         break;
@@ -98,30 +119,103 @@ namespace GLTFast
                 }
             }
 
-            hasColors = colorInput.HasValue;
+            hasColors = colorAccessorIndex >= 0;
             if (hasColors) {
                 jobCount++;
                 colors = new VertexBufferColors();
             }
 
-            hasBones = weightsInput.HasValue && jointsInput.HasValue;
+            hasBones = weightsAccessorIndex >= 0 && jointsAccessorIndex >= 0;
             if(hasBones) {
-                jobCount+=2;
+                jobCount++;
                 bones = new VertexBufferBones(logger);
             }
 
             NativeArray<JobHandle> handles = new NativeArray<JobHandle>(jobCount, defaultAllocator);
             int handleIndex = 0;
             
-            fixed( void* input = &(posInput.buffer[posInput.startOffset])) {
+            {
+                JobHandle? h = null;
+                if(posAcc.bufferView>=0) {
+                    h = GetVector3sJob(
+                        posData,
+                        posAcc.count,
+                        posAcc.componentType,
+                        posByteStride,
+                        (float3*) vDataPtr,
+                        outputByteStride,
+                        posAcc.normalized,
+                        false // positional data never needs to be normalized
+                    );
+                }
+                if (posAcc.isSparse) {
+                    buffers.GetAccessorSparseIndices(posAcc.sparse.indices, out var posIndexData);
+                    buffers.GetAccessorSparseValues(posAcc.sparse.values, out var posValueData);
+                    var sparseJobHandle = GetVector3sSparseJob(
+                        posIndexData,
+                        posValueData,
+                        posAcc.sparse.count,
+                        posAcc.sparse.indices.componentType,
+                        posAcc.componentType,
+                        (float3*) vDataPtr,
+                        outputByteStride,
+                        dependsOn: ref h,
+                        posAcc.normalized
+                    );
+                    if (sparseJobHandle.HasValue) {
+                        handles[handleIndex] = sparseJobHandle.Value;
+                        handleIndex++;
+                    } else {
+                        Profiler.EndSample();
+                        return null;
+                    }
+                }
+                if (h.HasValue) {
+                    handles[handleIndex] = h.Value;
+                    handleIndex++;
+                } else {
+                    Profiler.EndSample();
+                    return null;
+                }
+            }
+
+            if (normalAccessorIndex>=0) {
+                buffers.GetAccessor(normalAccessorIndex, out var nrmAcc, out var input, out var inputByteStride);
+                if (nrmAcc.isSparse) {
+                    logger.Error(LogCode.SparseAccessor,"normals");
+                }
                 var h = GetVector3sJob(
                     input,
-                    posInput.count,
-                    posInput.type,
-                    posInput.byteStride,
-                    (Vector3*) vDataPtr,
+                    nrmAcc.count,
+                    nrmAcc.componentType,
+                    inputByteStride,
+                    (float3*) (vDataPtr+12),
                     outputByteStride,
-                    posInput.normalize
+                    nrmAcc.normalized,
+                    true // normals need to be unit length
+                );
+                if (h.HasValue) {
+                    handles[handleIndex] = h.Value;
+                    handleIndex++;
+                } else {
+                    Profiler.EndSample();
+                    return null;
+                }
+            }
+            
+            if (tangentAccessorIndex>=0) {
+                buffers.GetAccessor(tangentAccessorIndex, out var tanAcc, out var input, out var inputByteStride);
+                if (tanAcc.isSparse) {
+                    logger.Error(LogCode.SparseAccessor,"tangents");
+                }
+                var h = GetTangentsJob(
+                    input,
+                    tanAcc.count,
+                    tanAcc.componentType,
+                    inputByteStride,
+                    (float4*) (vDataPtr+24),
+                    outputByteStride,
+                    tanAcc.normalized
                 );
                 if (h.HasValue) {
                     handles[handleIndex] = h.Value;
@@ -132,61 +226,46 @@ namespace GLTFast
                 }
             }
 
-            if (nrmInput.HasValue) {
-                fixed( void* input = &(nrmInput.Value.buffer[nrmInput.Value.startOffset])) {
-                    var h = GetVector3sJob(
-                        input,
-                        nrmInput.Value.count,
-                        nrmInput.Value.type,
-                        nrmInput.Value.byteStride,
-                        (Vector3*) (vDataPtr+12),
-                        outputByteStride,
-                        nrmInput.Value.normalize
-                    );
-                    if (h.HasValue) {
-                        handles[handleIndex] = h.Value;
-                        handleIndex++;
-                    } else {
-                        Profiler.EndSample();
-                        return null;
-                    }
-                }
-            }
-            
-            if (tanInput.HasValue) {
-                fixed( void* input = &(tanInput.Value.buffer[tanInput.Value.startOffset])) {
-                    var h = GetTangentsJob(
-                        input,
-                        tanInput.Value.count,
-                        tanInput.Value.type,
-                        tanInput.Value.byteStride,
-                        (Vector4*) (vDataPtr+24),
-                        outputByteStride,
-                        tanInput.Value.normalize
-                    );
-                    if (h.HasValue) {
-                        handles[handleIndex] = h.Value;
-                        handleIndex++;
-                    } else {
-                        Profiler.EndSample();
-                        return null;
-                    }
-                }
-            }
-
             if (texCoords!=null) {
-                texCoords.ScheduleVertexUVJobs(uvInputs, new NativeSlice<JobHandle>(handles,handleIndex,uvInputs.Length) );
-                handleIndex++;
+                texCoords.ScheduleVertexUVJobs(
+                    buffers,
+                    uvAccessorIndices,
+                    posAcc.count,
+                    new NativeSlice<JobHandle>(
+                        handles,
+                        handleIndex,
+                        uvAccessorIndices.Length
+                        )
+                    );
+                handleIndex += uvAccessorIndices.Length;
             }
             
             if (hasColors) {
-                colors.ScheduleVertexColorJob(colorInput.Value, new NativeSlice<JobHandle>(handles, handleIndex, 1));
+                colors.ScheduleVertexColorJob(
+                    buffers,
+                    colorAccessorIndex,
+                    new NativeSlice<JobHandle>(
+                        handles, 
+                        handleIndex, 
+                        1
+                        )
+                    );
                 handleIndex++;
             }
 
             if (hasBones) {
-                bones.ScheduleVertexBonesJob(weightsInput.Value, jointsInput.Value, new NativeSlice<JobHandle>(handles, handleIndex, 2) );
-                handleIndex+=2;
+                var h = bones.ScheduleVertexBonesJob(
+                    buffers,
+                    weightsAccessorIndex,
+                    jointsAccessorIndex
+                );
+                if (h.HasValue) {
+                    handles[handleIndex] = h.Value;
+                    handleIndex++;
+                } else {
+                    Profiler.EndSample();
+                    return null;
+                }
             }
             
             var handle = (jobCount > 1) ? JobHandle.CombineDependencies(handles) : handles[0];
@@ -216,15 +295,15 @@ namespace GLTFast
                 vadCount++;
             }
             stream++;
-            
-            if (texCoords != null) {
-                texCoords.AddDescriptors(vad,ref vadCount,stream);
-                stream++;
-            }
 
             if (colors != null) {
                 colors.AddDescriptors(vad,vadCount,stream);
                 vadCount++;
+                stream++;
+            }
+            
+            if (texCoords != null) {
+                texCoords.AddDescriptors(vad,ref vadCount,stream);
                 stream++;
             }
 
@@ -252,16 +331,16 @@ namespace GLTFast
             stream++;
             Profiler.EndSample();
 
+            if (colors != null) {
+                colors.ApplyOnMesh(msh,stream,flags);
+                stream++;
+            }
+            
             if (texCoords != null) {
                 texCoords.ApplyOnMesh(msh,stream,flags);
                 stream++;
             }
             
-            if (colors != null) {
-                colors.ApplyOnMesh(msh,stream,flags);
-                stream++;
-            }
-
             if (bones != null) {
                 bones.ApplyOnMesh(msh,stream,flags);
                 stream++;
@@ -275,12 +354,12 @@ namespace GLTFast
                 vData.Dispose();
             }
 
-            if (texCoords != null) {
-                texCoords.Dispose();
-            }
-
             if (colors != null) {
                 colors.Dispose();
+            }
+
+            if (texCoords != null) {
+                texCoords.Dispose();
             }
 
             if (bones != null) {

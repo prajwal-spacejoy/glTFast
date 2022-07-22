@@ -1,4 +1,4 @@
-﻿// Copyright 2020-2021 Andreas Atteneder
+﻿// Copyright 2020-2022 Andreas Atteneder
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,32 +15,79 @@
 
 using System;
 using System.Collections.Generic;
+using GLTFast.Schema;
 using Unity.Collections;
 using UnityEngine;
+#if USING_HDRP
+using UnityEngine.Rendering.HighDefinition;
+#endif
+using Camera = UnityEngine.Camera;
+using Material = UnityEngine.Material;
+using Mesh = UnityEngine.Mesh;
+
 // #if UNITY_EDITOR && UNITY_ANIMATION
 // using UnityEditor.Animations;
 // #endif
 
 namespace GLTFast {
+    
+    using Logging;
+    
+    /// <summary>
+    /// Generates a GameObject hierarchy from a glTF scene 
+    /// </summary>
     public class GameObjectInstantiator : IInstantiator {
 
         public class SceneInstance {
+            
+            /// <summary>
+            /// List of instantiated cameras
+            /// </summary>
             public List<Camera> cameras { get; private set; }
+            public List<Light> lights { get; private set; }
 
-            public void AddCamera(Camera camera) {
+            /// <summary>
+            /// Adds a camera
+            /// </summary>
+            /// <param name="camera">Camera to be added</param>
+            internal void AddCamera(Camera camera) {
                 if (cameras == null) {
                     cameras = new List<Camera>();
                 }
                 cameras.Add(camera);
             }
+            
+            public void AddLight(Light light) {
+                if (lights == null) {
+                    lights = new List<Light>();
+                }
+                lights.Add(light);
+            }
         }
         
+        /// <summary>
+        /// Instantiation settings
+        /// </summary>
+        protected InstantiationSettings settings;
+        
+        /// <summary>
+        /// Instantiation logger
+        /// </summary>
         protected ICodeLogger logger;
         
+        /// <summary>
+        /// glTF to instantiate from
+        /// </summary>
         protected IGltfReadable gltf;
         
+        /// <summary>
+        /// Generated GameObjects will get parented to this Transform
+        /// </summary>
         protected Transform parent;
 
+        /// <summary>
+        /// glTF node index to instantiated GameObject dictionary
+        /// </summary>
         protected Dictionary<uint,GameObject> nodes;
 
         /// <summary>
@@ -48,17 +95,33 @@ namespace GLTFast {
         /// </summary>
         public SceneInstance sceneInstance { get; protected set; }
         
-        public GameObjectInstantiator(IGltfReadable gltf, Transform parent, ICodeLogger logger = null) {
+        /// <summary>
+        /// Constructs a GameObjectInstantiator
+        /// </summary>
+        /// <param name="gltf">glTF to instantiate from</param>
+        /// <param name="parent">Generated GameObjects will get parented to this Transform</param>
+        /// <param name="logger">Custom logger</param>
+        /// <param name="settings">Instantiation settings</param>
+        public GameObjectInstantiator(
+            IGltfReadable gltf,
+            Transform parent,
+            ICodeLogger logger = null,
+            InstantiationSettings settings = null
+            )
+        {
             this.gltf = gltf;
             this.parent = parent;
             this.logger = logger;
+            this.settings = settings ?? new InstantiationSettings();
         }
 
+        /// <inheritdoc />
         public virtual void Init() {
             nodes = new Dictionary<uint, GameObject>();
             sceneInstance = new SceneInstance();
         }
 
+        /// <inheritdoc />
         public void CreateNode(
             uint nodeIndex,
             Vector3 position,
@@ -69,9 +132,11 @@ namespace GLTFast {
             go.transform.localScale = scale;
             go.transform.localPosition = position;
             go.transform.localRotation = rotation;
+            go.layer = settings.layer;
             nodes[nodeIndex] = go;
         }
 
+        /// <inheritdoc />
         public void SetParent(uint nodeIndex, uint parentIndex) {
             if(nodes[nodeIndex]==null || nodes[parentIndex]==null ) {
                 logger?.Error(LogCode.HierarchyInvalid);
@@ -80,45 +145,66 @@ namespace GLTFast {
             nodes[nodeIndex].transform.SetParent(nodes[parentIndex].transform,false);
         }
 
-        public void SetNodeName(uint nodeIndex, string name) {
+        /// <inheritdoc />
+        public virtual void SetNodeName(uint nodeIndex, string name) {
             nodes[nodeIndex].name = name ?? $"Node-{nodeIndex}";
         }
 
+        /// <inheritdoc />
         public virtual void AddPrimitive(
             uint nodeIndex,
             string meshName,
             Mesh mesh,
             int[] materialIndices,
             uint[] joints = null,
+            uint? rootJoint = null,
+            float[] morphTargetWeights = null,
             int primitiveNumeration = 0
         ) {
+            if ((settings.mask & ComponentType.Mesh) == 0) {
+                return;
+            }
 
             GameObject meshGo;
             if(primitiveNumeration==0) {
                 // Use Node GameObject for first Primitive
                 meshGo = nodes[nodeIndex];
             } else {
-                meshGo = new GameObject( $"{meshName ?? "Primitive"}_{primitiveNumeration}" );
+                meshGo = new GameObject(meshName);
                 meshGo.transform.SetParent(nodes[nodeIndex].transform,false);
+                meshGo.layer = settings.layer;
             }
 
             Renderer renderer;
 
-            if(joints==null) {
+            var hasMorphTargets = mesh.blendShapeCount > 0;
+            if(joints==null && !hasMorphTargets) {
                 var mf = meshGo.AddComponent<MeshFilter>();
                 mf.mesh = mesh;
                 var mr = meshGo.AddComponent<MeshRenderer>();
                 renderer = mr;
             } else {
                 var smr = meshGo.AddComponent<SkinnedMeshRenderer>();
-                var bones = new Transform[joints.Length];
-                for (var j = 0; j < bones.Length; j++)
-                {
-                    var jointIndex = joints[j];
-                    bones[j] = nodes[jointIndex].transform;
+                smr.updateWhenOffscreen = settings.skinUpdateWhenOffscreen;
+                if (joints != null) {
+                    var bones = new Transform[joints.Length];
+                    for (var j = 0; j < bones.Length; j++)
+                    {
+                        var jointIndex = joints[j];
+                        bones[j] = nodes[jointIndex].transform;
+                    }
+                    smr.bones = bones;
+                    if (rootJoint.HasValue) {
+                        smr.rootBone = nodes[rootJoint.Value].transform;
+                    }
                 }
-                smr.bones = bones;
                 smr.sharedMesh = mesh;
+                if (morphTargetWeights!=null) {
+                    for (var i = 0; i < morphTargetWeights.Length; i++) {
+                        var weight = morphTargetWeights[i];
+                        smr.SetBlendShapeWeight(i, weight);
+                    }
+                }
                 renderer = smr;
             }
 
@@ -131,7 +217,8 @@ namespace GLTFast {
             renderer.sharedMaterials = materials;
         }
 
-        public void AddPrimitiveInstanced(
+        /// <inheritdoc />
+        public virtual void AddPrimitiveInstanced(
             uint nodeIndex,
             string meshName,
             Mesh mesh,
@@ -142,6 +229,10 @@ namespace GLTFast {
             NativeArray<Vector3>? scales,
             int primitiveNumeration = 0
         ) {
+            if ((settings.mask & ComponentType.Mesh) == 0) {
+                return;
+            }
+            
             var materials = new Material[materialIndices.Length];
             for (var index = 0; index < materials.Length; index++) {
                 var material = gltf.GetMaterial(materialIndices[index]) ?? gltf.GetDefaultMaterial();
@@ -150,7 +241,8 @@ namespace GLTFast {
             }
 
             for (var i = 0; i < instanceCount; i++) {
-                var meshGo = new GameObject( $"{meshName ?? "Primitive"}_p{primitiveNumeration}_i{i}" );
+                var meshGo = new GameObject( $"{meshName}_i{i}" );
+                meshGo.layer = settings.layer;
                 var t = meshGo.transform;
                 t.SetParent(nodes[nodeIndex].transform,false);
                 t.localPosition = positions?[i] ?? Vector3.zero;
@@ -164,7 +256,8 @@ namespace GLTFast {
             }
         }
 
-        public void AddCamera(uint nodeIndex, uint cameraIndex) {
+        /// <inheritdoc />
+        public virtual void AddCamera(uint nodeIndex, uint cameraIndex) {
             var camera = gltf.GetSourceCamera(cameraIndex);
             switch (camera.typeEnum) {
             case Schema.Camera.Type.Orthographic:
@@ -253,7 +346,7 @@ namespace GLTFast {
 
         /// <summary>
         /// Creates a camera component on the given node and returns an approximated
-        /// local-to-world scale factor, required to counter-act that Unity scales
+        /// local-to-world scale factor, required to counteract that Unity scales
         /// near- and far-clipping-planes via Transform.
         /// </summary>
         /// <param name="nodeIndex">Node's index</param>
@@ -263,6 +356,7 @@ namespace GLTFast {
         Camera CreateCamera(uint nodeIndex,string cameraName, out float localScale) {
             var cameraParent = nodes[nodeIndex];
             var camGo = new GameObject(cameraName ?? $"{cameraParent.name}-Camera" ?? $"Camera-{nodeIndex}");
+            camGo.layer = settings.layer;
             var camTrans = camGo.transform;
             var parentTransform = cameraParent.transform;
             camTrans.SetParent(parentTransform,false);
@@ -296,25 +390,116 @@ namespace GLTFast {
         //     }
         // }
 
-        public void AddScene(
+        public void AddLightPunctual(
+            uint nodeIndex,
+            uint lightIndex
+        ) {
+            if ((settings.mask & ComponentType.Light) == 0) {
+                return;
+            }
+            var lightGameObject = nodes[nodeIndex];
+            var lightSource = gltf.GetSourceLightPunctual(lightIndex);
+
+            if (lightSource.typeEnum != LightPunctual.Type.Point) {
+                // glTF lights' direction is flipped, compared with Unity's, so
+                // we're adding a rotated child GameObject to counteract.
+                var tmp = new GameObject($"{lightGameObject.name}_Orientation");
+                tmp.transform.SetParent(lightGameObject.transform,false);
+                tmp.transform.localEulerAngles = new Vector3(0, 180, 0);
+                lightGameObject = tmp;
+            }
+            var light = lightGameObject.AddComponent<Light>();
+
+            switch (lightSource.typeEnum) {
+                case LightPunctual.Type.Unknown:
+                    break;
+                case LightPunctual.Type.Spot:
+                    light.type = LightType.Spot;
+                    break;
+                case LightPunctual.Type.Directional:
+                    light.type = LightType.Directional;
+                    break;
+                case LightPunctual.Type.Point:
+                    light.type = LightType.Point;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            
+            light.color = lightSource.lightColor;
+            
+            LightAssignIntensity(light, lightSource);
+
+            light.range = lightSource.range > 0
+                ? lightSource.range
+                : 100_000; // glTF 2.0 spec says infinite, but float.MaxValue
+                           // breaks spot lights in URP.
+
+            if (lightSource.typeEnum == LightPunctual.Type.Spot) {
+                light.spotAngle = lightSource.spot.outerConeAngle * Mathf.Rad2Deg * 2f;
+                light.innerSpotAngle = lightSource.spot.innerConeAngle * Mathf.Rad2Deg * 2f;
+            }
+            
+            sceneInstance.AddLight(light);
+        }
+        
+        protected virtual void LightAssignIntensity(Light light, LightPunctual lightSource) {
+            var intensity = lightSource.intensity * settings.lightIntensityFactor;
+            var renderPipeline = RenderPipelineUtils.renderPipeline;
+            switch (renderPipeline) {
+                case RenderPipeline.BuiltIn:
+                    light.intensity = intensity / Mathf.PI;
+                    break;
+                case RenderPipeline.Universal:
+                    light.intensity = intensity;
+                    break;
+#if USING_HDRP
+                case RenderPipeline.HighDefinition:
+                    var lightHd = light.gameObject.AddComponent<HDAdditionalLightData>();
+                    if (lightSource.typeEnum == LightPunctual.Type.Directional) {
+                        lightHd.lightUnit = LightUnit.Lux;
+                    }
+                    else {
+                        lightHd.lightUnit = LightUnit.Candela;
+                    }
+                    lightHd.intensity = lightSource.intensity;
+                    break;
+#endif
+                default:
+                    light.intensity = intensity;
+                    break;
+            }
+        }
+        
+        /// <inheritdoc />
+        public virtual void AddScene(
             string name,
             uint[] nodeIndices
 #if UNITY_ANIMATION
             ,AnimationClip[] animationClips
 #endif // UNITY_ANIMATION
-            )
-        {
-            var go = new GameObject(name ?? "Scene");
-            go.transform.SetParent( parent, false);
-
-            foreach(var nodeIndex in nodeIndices) {
-                if (nodes[nodeIndex] != null) {
-                    nodes[nodeIndex].transform.SetParent( go.transform, false );
+            ) {
+            GameObject sceneGameObject;
+            if (settings.sceneObjectCreation == InstantiationSettings.SceneObjectCreation.Never
+                || settings.sceneObjectCreation == InstantiationSettings.SceneObjectCreation.WhenMultipleRootNodes && nodeIndices.Length == 1) {
+                sceneGameObject = parent.gameObject;
+            }
+            else {
+                sceneGameObject = new GameObject(name ?? "Scene");
+                sceneGameObject.transform.SetParent( parent, false);
+                sceneGameObject.layer = settings.layer;
+            }
+            
+            if (nodeIndices != null) {
+                foreach(var nodeIndex in nodeIndices) {
+                    if (nodes[nodeIndex] != null) {
+                        nodes[nodeIndex].transform.SetParent( sceneGameObject.transform, false );
+                    }
                 }
             }
 
 #if UNITY_ANIMATION
-            if (animationClips != null) {
+            if ((settings.mask & ComponentType.Animation) != 0 && animationClips != null) {
                 // we want to create an Animator for non-legacy clips, and an Animation component for legacy clips.
                 var isLegacyAnimation = animationClips.Length > 0 && animationClips[0].legacy;
 // #if UNITY_EDITOR
@@ -355,7 +540,7 @@ namespace GLTFast {
 // #endif // UNITY_EDITOR
 
                 if(isLegacyAnimation) {
-                    var animation = go.AddComponent<Animation>();
+                    var animation = sceneGameObject.AddComponent<Animation>();
                     
                     for (var index = 0; index < animationClips.Length; index++) {
                         var clip = animationClips[index];

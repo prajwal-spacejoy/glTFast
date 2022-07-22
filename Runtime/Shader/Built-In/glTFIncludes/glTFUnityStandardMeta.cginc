@@ -1,4 +1,20 @@
-// Unity built-in shader source. Copyright (c) 2016 Unity Technologies. MIT license (see license.txt)
+// Copyright 2020 Andreas Atteneder
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+// Based on Unity built-in shader source. Copyright (c) 2016 Unity Technologies. MIT license (see license.txt)
+
 
 #ifndef UNITY_STANDARD_META_INCLUDED
 #define UNITY_STANDARD_META_INCLUDED
@@ -25,7 +41,12 @@ struct v2f_meta
 v2f_meta vert_meta (VertexInput v)
 {
     v2f_meta o;
+#ifdef UNITY_COLORSPACE_GAMMA
+    o.color.rgb = LinearToGammaSpace(v.color.rgb);
+    o.color.a = v.color.a;
+#else
     o.color = v.color;
+#endif
     o.pos = UnityMetaVertexPosition(v.vertex, v.uv1.xy, v.uv2.xy, unity_LightmapST, unity_DynamicLightmapST);
 
     o.uv.xy = TexCoordsSingle((_MainTexUVChannel==0)?v.uv0:v.uv1,_MainTex);

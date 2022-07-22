@@ -1,4 +1,4 @@
-﻿// Copyright 2020-2021 Andreas Atteneder
+﻿// Copyright 2020-2022 Andreas Atteneder
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,10 +17,17 @@ using Unity.Collections;
 using UnityEngine;
 
 namespace GLTFast {
+    
+    /// <summary>
+    /// After parsing and loading a glTF's content and converting its content
+    /// into Unity resources,the second step is instantiation.
+    /// Implementors of this interface can convert glTF resources into scene
+    /// objects. 
+    /// </summary>
     public interface IInstantiator {
 
         /// <summary>
-        /// Used to initialize Instantiators. Always called first.
+        /// Used to initialize instantiators. Always called first.
         /// </summary>
         void Init();
 
@@ -63,6 +70,8 @@ namespace GLTFast {
         /// <param name="mesh">The actual Mesh</param>
         /// <param name="materialIndices">Material indices. Should be used to query the material</param>
         /// <param name="joints">If a skin was attached, the joint indices. Null otherwise</param>
+        /// <param name="rootJoint">Root joint node index, if present</param>
+        /// <param name="morphTargetWeights">Morph target weights, if present</param>
         /// <param name="primitiveNumeration">Primitives are numerated per Node, starting with 0</param>
         void AddPrimitive(
             uint nodeIndex,
@@ -70,6 +79,8 @@ namespace GLTFast {
             Mesh mesh,
             int[] materialIndices,
             uint[] joints = null,
+            uint? rootJoint = null,
+            float[] morphTargetWeights = null,
             int primitiveNumeration = 0
         );
 
@@ -107,6 +118,16 @@ namespace GLTFast {
         void AddCamera(
             uint nodeIndex,
             uint cameraIndex
+        );
+
+        /// <summary>
+        /// Called when a node has a punctual light assigned (KHR_lights_punctual)
+        /// </summary>
+        /// <param name="nodeIndex">Index of the node</param>
+        /// <param name="lightIndex">Index of the punctual light</param>
+        void AddLightPunctual(
+            uint nodeIndex,
+            uint lightIndex
         );
         
         /// <summary>
