@@ -244,6 +244,10 @@ namespace GLTFast {
         /// </summary>
         public bool LoadingError { get { return loadingError; } private set { this.loadingError = value; } }
 
+        private bool isLoadingFromEditor = false;
+        
+        public bool IsLoadingFromEditor { get { return isLoadingFromEditor; } set { this.isLoadingFromEditor = value; } }
+        
         ICodeLogger logger;
         
         /// <summary>
@@ -823,7 +827,7 @@ namespace GLTFast {
             }
             
 #if HP_GLTF
-            if (gltfRoot.images != null)
+            if (!IsLoadingFromEditor && gltfRoot.images != null)
             {
                 var urlSplit = baseUri.AbsoluteUri.Split('/');
                 var destSplitArray = new string[urlSplit.Length - 2];
@@ -1138,14 +1142,20 @@ namespace GLTFast {
                         } else
                         {
 #if HP_GLTF
-                            // Although slower, the texture is realloc here, as the mipmap gen has to be set at the constructor and the unitywebreq.texture doesn't have that by default
-                            // TODO: faster texture copy or more efficient www texture fetch with mips
-                            if (ExtendedGltf.forceMipGeneration)
+                            if (!IsLoadingFromEditor)
                             {
-                                txt = CreateEmptyTexture(gltfRoot.images[imageIndex], imageIndex, forceSampleLinear);
-                                // TODO: Investigate for NativeArray variant to avoid `www.data`
-                                txt.LoadImage(www.data);
-                                txt.Apply(true, !imageReadable[imageIndex]);
+                                // Although slower, the texture is realloc here, as the mipmap gen has to be set at the constructor and the unitywebreq.texture doesn't have that by default
+                                // TODO: faster texture copy or more efficient www texture fetch with mips
+                                if (ExtendedGltf.forceMipGeneration)
+                                {
+                                    txt = CreateEmptyTexture(gltfRoot.images[imageIndex], imageIndex,
+                                        forceSampleLinear);
+                                    // TODO: Investigate for NativeArray variant to avoid `www.data`
+                                    txt.LoadImage(www.data);
+                                    txt.Apply(true, !imageReadable[imageIndex]);
+                                }
+                                else
+                                    txt = ((ITextureDownload) www).texture;
                             }
                             else
                                 txt = ((ITextureDownload)www).texture;

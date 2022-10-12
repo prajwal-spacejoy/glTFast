@@ -96,7 +96,7 @@ namespace GLTFast.Editor {
                 null,
                 logger
                 );
-
+            m_Gltf.IsLoadingFromEditor = true;
             if (editorImportSettings == null) {
                 // Design-time import specific settings
                 editorImportSettings = new EditorImportSettings();
@@ -118,6 +118,8 @@ namespace GLTFast.Editor {
             if (success) {
                 m_ImportedNames = new HashSet<string>();
                 m_ImportedObjects = new HashSet<Object>();
+                if (instantiationSettings == null)
+                    instantiationSettings = new InstantiationSettings();
 
                 if (instantiationSettings.sceneObjectCreation == InstantiationSettings.SceneObjectCreation.Never) {
                     
@@ -278,6 +280,7 @@ namespace GLTFast.Editor {
                 Debug.LogError($"Failed to import {assetPath} (see inspector for details)", this);
             }
             reportItems = reportItemList.ToArray();
+            m_Gltf.IsLoadingFromEditor = false;
         }
 
         void AddObjectToAsset(AssetImportContext ctx, string originalName, Object obj) {
